@@ -1,33 +1,44 @@
-import { useEffect, useState } from "react";
-import Head from "next/head";
-import LitJsSdk from "@lit-protocol/sdk-browser";
-import WalletConnect from "@walletconnect/client";
-import { ethers } from "ethers";
-import { QrReader } from "react-qr-reader";
+import { useEffect, useState } from 'react';
+import Head from 'next/head';
+import LitJsSdk from 'lit-js-sdk';
+import WalletConnect from '@walletconnect/client';
+import { ethers } from 'ethers';
+import { QrReader } from 'react-qr-reader';
+import {
+  hexlify,
+  splitSignature,
+  hexZeroPad,
+  joinSignature,
+} from '@ethersproject/bytes';
+import { verifyMessage } from '@ethersproject/wallet';
+
 const BigNumber = ethers.BigNumber;
 
 const publicKey =
-  "0x04478d4d175f0f3e310f431224e169329be740db68f8bc224d2b57c3c6fc0e69671b233f570cd452b03431e40e5deac2780b7b68c00536bd7948c2c5de982542a3";
+  '0x04c5f019b99796e26aa2835fe6ece2aad23dac1ca523b67c7ffde880776db1368ba37812b961f43197b3f473ad89b9c474051f83cce64d9d006aabd245b91794ef';
 const ethAddress = ethers.utils.computeAddress(publicKey);
 const networkId = 80001;
-const rpcUrl = "https://matic-mumbai.chainstacklabs.com";
+const rpcUrl = 'https://matic-mumbai.chainstacklabs.com';
 
-globalThis.ethAddress = ethAddress;
+// globalThis.ethAddress = ethAddress;
 globalThis.LitJsSdk = LitJsSdk;
-globalThis.ethers = ethers;
+// globalThis.ethers = ethers;
 
 export default function Home() {
   const [litNodeClient, setLitNodeClient] = useState(null);
   const [walletConnector, setWalletConnector] = useState(null);
-  const [data, setData] = useState(null);
+  const [data, setData] = useState('');
 
-  useEffect(async () => {
-    const client = new LitJsSdk.LitNodeClient({
-      litNetwork: "localhost",
-      debug: false,
-    });
-    await client.connect();
-    setLitNodeClient(client);
+  useEffect(() => {
+    async function init() {
+      const litNodeClient = new LitJsSdk.LitNodeClient({
+        litNetwork: 'mumbai',
+      });
+      await litNodeClient.connect();
+      setLitNodeClient(litNodeClient);
+    }
+
+    init();
 
     // walletconnect id 7310597d2e34d8d9b01deb49e7ac0b7c
   }, []);
@@ -39,38 +50,21 @@ export default function Home() {
       uri: data,
       // Required
       clientMeta: {
-        description: "Lit PKP Wallet",
-        url: "https://litprotocol.com",
-        name: "Lit PKP Wallet",
+        description: 'Lit PKP Wallet',
+        url: 'https://litprotocol.com',
+        name: 'Lit PKP Wallet',
       },
     });
-    console.log("created connector", connector);
+    console.log('created connector', connector);
 
     // Subscribe to session requests
-    connector.on("session_request", (error, payload) => {
+    connector.on('session_request', (error, payload) => {
       if (error) {
         throw error;
       }
-      console.log("session_request", payload);
+      console.log('session_request', payload);
 
       // Handle Session Request
-
-      /* payload:
-  {
-    id: 1,
-    jsonrpc: '2.0'.
-    method: 'session_request',
-    params: [{
-      peerId: '15d8b6a3-15bd-493e-9358-111e3a4e6ee4',
-      peerMeta: {
-        name: "WalletConnect Example",
-        description: "Try out WalletConnect v1.0",
-        icons: ["https://example.walletconnect.org/favicon.ico"],
-        url: "https://example.walletconnect.org"
-      }
-    }]
-  }
-  */
 
       // Approve Session
       connector.approveSession({
@@ -83,90 +77,242 @@ export default function Home() {
     });
 
     // Subscribe to call requests
-    connector.on("call_request", async (error, payload) => {
+    connector.on('call_request', async (error, payload) => {
       if (error) {
         throw error;
       }
-      console.log("call request", payload);
+      console.log('call request', payload);
 
       // Handle Call Request
 
-      /* payload:
-  {
-    id: 1,
-    jsonrpc: '2.0'.
-    method: 'eth_sign',
-    params: [
-      "0xbc28ea04101f03ea7a94c1379bc3ab32e65e62d3",
-      "My email is john@doe.com - 1537836206101"
-    ]
-  }
-  */
+      let dataToSign = null;
+      let addressRequested = null;
 
-      const txFromParams = payload.params[0];
+      switch (payload.method) {
+        case 'eth_sign':
+          dataToSign = payload.params[1];
+          addressRequested = payload.params[0];
+          signMessage(ethers.utils.arrayify(dataToSign));
+          break;
+        case 'personal_sign':
+          dataToSign = payload.params[0];
+          addressRequested = payload.params[1];
+          signPersonalMessage(dataToSign);
+          break;
+        case 'eth_signTypedData':
+          dataToSign = payload.params[1];
+          addressRequested = payload.params[0];
+          signMessage(dataToSign);
+          break;
+        case 'eth_signTransaction':
+          dataToSign = payload.params[0];
+          signTransaction(dataToSign);
+          break;
+        case 'eth_sendTransaction':
+          dataToSign = payload.params[0];
+          sendTransaction(dataToSign);
+          break;
+        default:
+          break;
+      }
 
-      // need to massage a few things
-      const txParams = {
-        to: txFromParams.to,
-        value: BigNumber.from("10"),
-        nonce: txFromParams.nonce,
-        maxFeePerGas: BigNumber.from("3395000013"),
-        maxPriorityFeePerGas: BigNumber.from("3394999999"),
-        gasLimit: BigNumber.from("21000"),
-        data: txFromParams.data,
-        type: 2,
-        chainId: networkId,
-      };
-      console.log("txParams", txParams);
+      async function signPersonalMessage(message) {
+        const litActionCode = `
+          const go = async () => {
+            const sigShare = await LitActions.ethPersonalSignMessageEcdsa({ message, publicKey, sigName });
+          };
+          
+          go();
+        `;
 
-      const serializedTx = ethers.utils.serializeTransaction(txParams);
-      console.log("serializedTx", serializedTx);
+        const authSig = await LitJsSdk.checkAndSignAuthMessage({
+          chain: 'mumbai',
+        });
 
-      const rlpEncodedTxn = ethers.utils.arrayify(serializedTx);
-      console.log("rlpEncodedTxn: ", rlpEncodedTxn);
+        const response = await litNodeClient.executeJs({
+          code: litActionCode,
+          authSig,
+          jsParams: {
+            message: message,
+            publicKey: publicKey,
+            sigName: 'sig1',
+          },
+        });
+        const signatures = response.signatures;
+        console.log('signatures: ', signatures);
+        const sig = signatures.sig1;
 
-      const unsignedTxn = ethers.utils.keccak256(rlpEncodedTxn);
-      console.log("unsignedTxn: ", unsignedTxn);
+        const encodedSig = joinSignature({
+          r: '0x' + sig.r,
+          s: '0x' + sig.s,
+          v: sig.recid,
+        });
+        console.log('encodedSig', encodedSig);
 
-      // you need an AuthSig to auth with the nodes
-      // this will get it from metamask or any browser wallet
-      const authSig = await LitJsSdk.checkAndSignAuthMessage({
-        chain: "mumbai",
-      });
+        // Approve Call Request
+        connector.approveRequest({
+          id: payload.id,
+          result: encodedSig,
+        });
+      }
 
-      const resp = await litNodeClient.executeJs({
-        ipfsId: "QmRwN9GKHvCn4Vk7biqtr6adjXMs7PzzYPCzNCRjPFiDjm",
-        authSig,
-        // all jsParams can be used anywhere in your litActionCode
-        jsParams: {
-          // this is the string "Hello World" for testing
-          toSign: ethers.utils.arrayify(unsignedTxn),
-          publicKey,
-          sigName: "sig1",
-        },
-      });
-      console.log("resp: ", resp);
-      const sig = resp.signatures.sig1;
-      console.log("sig: ", sig);
+      async function signMessage(toSign) {
+        const litActionCode = `
+          const go = async () => {
+            const sigShare = await LitActions.signEcdsa({ toSign, publicKey, sigName });
+          };
+          
+          go();
+        `;
 
-      const signedTxn = ethers.utils.serializeTransaction(
-        txParams,
-        sig.signature
-      );
+        const authSig = await LitJsSdk.checkAndSignAuthMessage({
+          chain: 'mumbai',
+        });
 
-      const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+        const response = await litNodeClient.executeJs({
+          code: litActionCode,
+          authSig,
+          jsParams: {
+            toSign: toSign,
+            publicKey: publicKey,
+            sigName: 'sig1',
+          },
+        });
+        const signatures = response.signatures;
+        console.log('signatures: ', signatures);
+        const sig = signatures.sig1;
 
-      const sentTxn = await provider.sendTransaction(signedTxn);
-      console.log("sentTxn", sentTxn);
+        const encodedSig = joinSignature({
+          r: '0x' + sig.r,
+          s: '0x' + sig.s,
+          v: sig.recid,
+        });
+        console.log('encodedSig', encodedSig);
 
-      // Approve Call Request
-      connector.approveRequest({
-        id: payload.id,
-        result: sentTxn.hash,
-      });
+        // Approve Call Request
+        connector.approveRequest({
+          id: payload.id,
+          result: encodedSig,
+        });
+      }
+
+      async function signTransaction(dataToSign) {
+        let txParams = dataToSign;
+        if (dataToSign && dataToSign.from) {
+          delete dataToSign.from;
+        }
+        dataToSign.gasLimit = dataToSign.gas;
+        delete dataToSign.gas;
+
+        console.log('txParams', txParams);
+
+        const serializedTx = ethers.utils.serializeTransaction(txParams);
+        console.log('serializedTx', serializedTx);
+
+        const rlpEncodedTxn = ethers.utils.arrayify(serializedTx);
+        console.log('rlpEncodedTxn: ', rlpEncodedTxn);
+
+        const unsignedTxn = ethers.utils.keccak256(rlpEncodedTxn);
+        console.log('unsignedTxn: ', unsignedTxn);
+
+        // you need an AuthSig to auth with the nodes
+        // this will get it from metamask or any browser wallet
+        const authSig = await LitJsSdk.checkAndSignAuthMessage({
+          chain: 'mumbai',
+        });
+
+        const resp = await litNodeClient.executeJs({
+          ipfsId: 'QmRwN9GKHvCn4Vk7biqtr6adjXMs7PzzYPCzNCRjPFiDjm',
+          authSig,
+          // all jsParams can be used anywhere in your litActionCode
+          jsParams: {
+            // this is the string "Hello World" for testing
+            toSign: ethers.utils.arrayify(unsignedTxn),
+            publicKey,
+            sigName: 'sig1',
+          },
+        });
+        console.log('resp: ', resp);
+        const sig = resp.signatures.sig1;
+        console.log('sig: ', sig);
+
+        const signedTxn = ethers.utils.serializeTransaction(
+          txParams,
+          sig.signature
+        );
+        console.log('signedTxn: ', signedTxn);
+
+        // Approve Call Request
+        connector.approveRequest({
+          id: payload.id,
+          result: signedTxn,
+        });
+      }
+
+      async function sendTransaction(txFromParams) {
+        // need to massage a few things
+        const txParams = {
+          to: txFromParams.to,
+          value: txFromParams.value,
+          nonce: txFromParams.nonce,
+          maxFeePerGas: BigNumber.from('3395000013'),
+          maxPriorityFeePerGas: BigNumber.from('3394999999'),
+          gasLimit: txFromParams.gas ? txFromParams.gas : txFromParams.gasLimit,
+          data: txFromParams.data,
+          type: 2,
+          chainId: networkId,
+        };
+        console.log('txParams', txParams);
+
+        const serializedTx = ethers.utils.serializeTransaction(txParams);
+        console.log('serializedTx', serializedTx);
+
+        const rlpEncodedTxn = ethers.utils.arrayify(serializedTx);
+        console.log('rlpEncodedTxn: ', rlpEncodedTxn);
+
+        const unsignedTxn = ethers.utils.keccak256(rlpEncodedTxn);
+        console.log('unsignedTxn: ', unsignedTxn);
+
+        // you need an AuthSig to auth with the nodes
+        // this will get it from metamask or any browser wallet
+        const authSig = await LitJsSdk.checkAndSignAuthMessage({
+          chain: 'mumbai',
+        });
+
+        const resp = await litNodeClient.executeJs({
+          ipfsId: 'QmRwN9GKHvCn4Vk7biqtr6adjXMs7PzzYPCzNCRjPFiDjm',
+          authSig,
+          // all jsParams can be used anywhere in your litActionCode
+          jsParams: {
+            // this is the string "Hello World" for testing
+            toSign: ethers.utils.arrayify(unsignedTxn),
+            publicKey,
+            sigName: 'sig1',
+          },
+        });
+        console.log('resp: ', resp);
+        const sig = resp.signatures.sig1;
+        console.log('sig: ', sig);
+
+        const signedTxn = ethers.utils.serializeTransaction(
+          txParams,
+          sig.signature
+        );
+
+        const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
+        const sentTxn = await provider.sendTransaction(signedTxn);
+        console.log('sentTxn', sentTxn);
+
+        // Approve Call Request
+        connector.approveRequest({
+          id: payload.id,
+          result: sentTxn.hash,
+        });
+      }
     });
 
-    connector.on("disconnect", (error, payload) => {
+    connector.on('disconnect', (error, payload) => {
       if (error) {
         throw error;
       }
@@ -177,8 +323,8 @@ export default function Home() {
     if (connector.connected) {
       console.log("it thinks it's connected?");
       const { chainId, accounts } = connector;
-      console.log("chainId", chainId);
-      console.log("accounts", accounts);
+      console.log('chainId', chainId);
+      console.log('accounts', accounts);
     }
 
     setWalletConnector(connector);
@@ -193,7 +339,7 @@ export default function Home() {
       <main>
         <button onClick={connect}>Connect</button>
 
-        <QrReader
+        {/* <QrReader
           onResult={(result, error) => {
             if (result) {
               console.log("result: ", result);
@@ -205,7 +351,14 @@ export default function Home() {
             }
           }}
           containerStyle={{ width: 600, height: 600 }}
-        />
+        /> */}
+        <input
+          id="wallet-name"
+          value={data}
+          onChange={e => setData(e.target.value)}
+          aria-label="wc url connect input"
+          placeholder="e.g. wc:a281567bb3e4..."
+        ></input>
         <p>{data}</p>
       </main>
 
