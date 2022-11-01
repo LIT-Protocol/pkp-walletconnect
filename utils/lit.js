@@ -135,13 +135,14 @@ export async function signTransaction(transaction, publicKey) {
   return signedTxn;
 }
 
-export async function sendTransaction(transaction, publicKey, provider) {
+export async function sendTransaction(transaction, publicKey, rpcUrl) {
   if (!litNodeClient) {
     await initLitNodeClient();
   }
 
-  const signedTxn = await this.signTransaction(transaction, publicKey);
+  const signedTxn = await signTransaction(transaction, publicKey);
 
+  const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
   const sentTxn = await provider.sendTransaction(signedTxn);
   console.log('sentTxn', sentTxn);
 
