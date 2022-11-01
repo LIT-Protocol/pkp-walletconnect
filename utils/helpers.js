@@ -42,3 +42,46 @@ export const getTypedDataToSign = data => {
 
   return data;
 };
+
+export const getTransactionToSign = txParams => {
+  let formattedTx = Object.assign({}, txParams);
+
+  if (formattedTx.gas) {
+    formattedTx.gasLimit = formattedTx.gas;
+    delete formattedTx.gas;
+  }
+
+  if (formattedTx.from) {
+    delete formattedTx.from;
+  }
+
+  return formattedTx;
+};
+
+export const getTransactionToSend = (txParams, chainId) => {
+  let formattedTx = getTransactionToSign(txParams);
+
+  if (formattedTx.gasPrice) {
+    delete formattedTx.gasPrice;
+  }
+
+  formattedTx.value = txParams.value
+    ? txParams.value
+    : ethers.BigNumber.from('10');
+
+  formattedTx.nonce = txParams.nonce;
+
+  formattedTx.maxFeePerGas = txParams.maxFeePerGas
+    ? txParams.maxFeePerGas
+    : ethers.BigNumber.from('3395000013');
+
+  formattedTx.maxPriorityFeePerGas = txParams.maxPriorityFeePerGas
+    ? txParams.maxPriorityFeePerGas
+    : ethers.BigNumber.from('3394999999');
+
+  formattedTx.chainId = chainId;
+
+  formattedTx.type = 2;
+
+  return formattedTx;
+};
