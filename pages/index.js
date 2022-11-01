@@ -7,9 +7,10 @@ import useAppContext from '../hooks/useAppContext';
 
 export default function Home() {
   const {
+    wcConnected,
     wcPeerMeta,
-    wcSessions,
     wcRequests,
+    wcResults,
     wcConnect,
     wcDisconnect,
     wcApproveSession,
@@ -34,8 +35,10 @@ export default function Home() {
       </Head>
 
       <main>
-        <span>Public key: {currentPKP.pubkey}</span>
-        <span>ETH address: {currentPKP.ethAddress}</span>
+        <button onClick={wcDisconnect}>Disconnect</button>
+        <p>{`CONNECTED: ${wcConnected}`}</p>
+        <p>Public key: {currentPKP.pubkey}</p>
+        <p>ETH address: {currentPKP.ethAddress}</p>
         <h1>Connect to dapps</h1>
         <p>
           Scan or paste the dapp&apos;s QR code to connect your cloud wallet to
@@ -64,7 +67,7 @@ export default function Home() {
           <button>Scan QR code</button>
         </div>
         <hr></hr>
-        <span>or paste QR code</span>
+        <p>or paste QR code</p>
         <form onSubmit={handleQrPaste}>
           <input
             id="wallet-name"
@@ -76,14 +79,17 @@ export default function Home() {
           <button type="submit">Connect</button>
         </form>
         <hr></hr>
-        <h2>Peer meta</h2>
-        <h3>{wcPeerMeta ? wcPeerMeta.name : 'None'}</h3>
+        <h2>Connected dapp</h2>
+        <p>
+          {wcConnected && wcPeerMeta ? wcPeerMeta.name : 'No connected dapps'}
+        </p>
         <hr></hr>
-        <h2>Requests</h2>
-        {wcRequests.length ? (
+        <h2>Pending Requests</h2>
+        <p>{wcRequests.length}</p>
+        {wcRequests.length > 0 ? (
           wcRequests.map((request, index) => (
-            <div key={`${request.method}-${index}`}>
-              <p>{request.method}</p>
+            <div key={`${request.payload.method}-${index}`}>
+              <p>{request.payload.method}</p>
             </div>
           ))
         ) : (
@@ -92,16 +98,19 @@ export default function Home() {
           </div>
         )}
         <hr></hr>
-        <h2>Connected dapps</h2>
-        {wcSessions.length ? (
-          wcSessions.map((session, index) => (
-            <div key={`${session.peerMeta.name}-${index}`}>
-              <p>{session.peerMeta.name}</p>
+        <h2>Past Activity</h2>
+        <p>{wcResults.length}</p>
+        {wcResults.length > 0 ? (
+          wcResults.map((result, index) => (
+            <div key={`${result.status}-${result.payload.method}-${index}`}>
+              <p>
+                {result.status} - {result.payload.method}
+              </p>
             </div>
           ))
         ) : (
           <div>
-            <div>{'No connected dapps'}</div>
+            <div>{'No recent activity'}</div>
           </div>
         )}
       </main>
