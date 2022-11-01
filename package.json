@@ -11,15 +11,16 @@
     "@ethersproject/wallet": "^5.7.0",
     "@walletconnect/client": "^1.8.0",
     "ethers": "^5.7.2",
+    "hex2dec": "^1.1.2",
     "lit-js-sdk": "^1.2.22",
     "next": "latest",
-    "react": "17.0.2",
-    "react-dom": "17.0.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-qr-reader": "^3.0.0-beta-1"
   },
   "devDependencies": {
     "eslint": "8.26.0",
-    "eslint-config-next": "13.0.0",
+    "eslint-config-next": "13.0.1",
     "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.7.1"
   }
