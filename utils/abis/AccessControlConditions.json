@@ -1,0 +1,83 @@
+[
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "key",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "permanent",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      }
+    ],
+    "name": "ConditionStored",
+    "type": "event"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "key", "type": "uint256" }],
+    "name": "getCondition",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "value", "type": "uint256" },
+          { "internalType": "uint256", "name": "chainId", "type": "uint256" },
+          { "internalType": "bool", "name": "permanent", "type": "bool" },
+          { "internalType": "address", "name": "creator", "type": "address" }
+        ],
+        "internalType": "struct AccessControlConditions.StoredCondition",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "key", "type": "uint256" },
+      { "internalType": "uint256", "name": "value", "type": "uint256" },
+      { "internalType": "uint256", "name": "chainId", "type": "uint256" },
+      { "internalType": "bool", "name": "permanent", "type": "bool" }
+    ],
+    "name": "storeCondition",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "storedConditions",
+    "outputs": [
+      { "internalType": "uint256", "name": "value", "type": "uint256" },
+      { "internalType": "uint256", "name": "chainId", "type": "uint256" },
+      { "internalType": "bool", "name": "permanent", "type": "bool" },
+      { "internalType": "address", "name": "creator", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

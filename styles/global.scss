@@ -1,0 +1,243 @@
+@import 'reset';
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
+
+$max-width: 32rem;
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: #f2f2f2;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100vh;
+}
+
+.cloud-wallet {
+  background-color: white;
+  border-radius: 0.5rem;
+  width: 100%;
+  max-width: $max-width;
+  margin: 1rem auto;
+  box-shadow: 0 1px 1px hsl(0deg 0% 0% / 0.075),
+    0 2px 2px hsl(0deg 0% 0% / 0.075), 0 4px 4px hsl(0deg 0% 0% / 0.075),
+    0 8px 8px hsl(0deg 0% 0% / 0.075), 0 16px 16px hsl(0deg 0% 0% / 0.075);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 1rem 2rem;
+
+  &__icon {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+  }
+
+  &__btn {
+    margin-left: 1rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid black;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-size: 0.75rem;
+    background-color: white;
+    cursor: pointer;
+    &:hover {
+      background-color: #f2f2f2;
+    }
+  }
+}
+
+.footer {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 2rem;
+  font-size: 0.75rem;
+}
+
+.container {
+  padding: 1rem 2rem;
+}
+
+.vertical-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.connect-wallet-btn {
+  padding: 1rem 1.5rem;
+  border: 1px solid black;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  width: 100%;
+  margin-top: 1rem;
+  font-size: 1rem;
+  background-color: white;
+  cursor: pointer;
+  &:hover {
+    background-color: #f2f2f2;
+  }
+}
+
+// .cloud-wallet-card {
+//   margin-bottom: 1rem;
+// }
+
+.connect-dapp {
+  border: 1px dashed #eeeeee;
+  border-radius: 0.5rem;
+  padding: 2rem;
+}
+
+.scan-qr {
+  background-color: #eeeeee;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  margin: 1.5rem 0;
+
+  &__btn {
+    padding: 0.5rem 1rem;
+    background-color: #d9d9d9;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+    cursor: pointer;
+    &:hover {
+      background-color: #f2f2f2;
+    }
+  }
+}
+
+.paste-qr {
+  &__copy {
+    margin-bottom: 0.5rem;
+  }
+
+  &__form {
+    display: flex;
+    width: 100%;
+  }
+
+  &__input {
+    flex-grow: 1;
+    padding: 0.5rem;
+    border: 1px solid #eeeeee;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  &__btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #eeeeee;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    &:hover {
+      background-color: #f2f2f2;
+    }
+  }
+}
+
+.qrIcon {
+  width: 5rem;
+  height: 5rem;
+}
+
+.section {
+  margin-top: 2rem;
+
+  &__title {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.session-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid #eeeeee;
+  border-radius: 0.5rem;
+
+  &__info {
+    display: flex;
+    align-items: flex-start;
+    flex-grow: 1;
+  }
+
+  &__icon {
+    width: 3rem;
+    height: 3rem;
+    margin-right: 1rem;
+  }
+
+  &__link {
+    font-size: 0.875rem;
+  }
+
+  &__no-link {
+    font-size: 0.875rem;
+  }
+
+  &__btn {
+    flex-shrink: 0;
+    margin-left: 1rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #eeeeee;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    &:hover {
+      background-color: #f2f2f2;
+    }
+  }
+}
+
+.empty-state {
+  color: gray;
+  font-size: 0.875rem;
+}
+
+.request-card {
+  // display: flex;
+  // align-items: flex-start;
+  // justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid #eeeeee;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.result-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1rem;
+  border: 1px solid #eeeeee;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+
+  &__badge {
+    margin-left: 1rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #eeeeee;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+  }
+}

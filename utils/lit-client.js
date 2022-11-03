@@ -25,6 +25,7 @@ let litNodeClient = null;
 export async function initLitNodeClient() {
   litNodeClient = new LitJsSdk.LitNodeClient({
     litNetwork: 'mumbai',
+    debug: false,
   });
   await litNodeClient.connect();
 }
@@ -48,7 +49,7 @@ export async function signPersonalMessage(message, publicKey) {
     },
   });
   const signatures = response.signatures;
-  console.log('signatures: ', signatures);
+  // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
 
   const encodedSig = joinSignature({
@@ -56,7 +57,7 @@ export async function signPersonalMessage(message, publicKey) {
     s: '0x' + sig.s,
     v: sig.recid,
   });
-  console.log('encodedSig', encodedSig);
+  // console.log('encodedSig', encodedSig);
 
   return encodedSig;
 }
@@ -80,7 +81,7 @@ export async function signMessage(message, publicKey) {
     },
   });
   const signatures = response.signatures;
-  console.log('signatures: ', signatures);
+  // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
 
   const encodedSig = joinSignature({
@@ -88,7 +89,7 @@ export async function signMessage(message, publicKey) {
     s: '0x' + sig.s,
     v: sig.recid,
   });
-  console.log('encodedSig', encodedSig);
+  // console.log('encodedSig', encodedSig);
 
   return encodedSig;
 }
@@ -98,16 +99,16 @@ export async function signTransaction(transaction, publicKey) {
     await initLitNodeClient();
   }
 
-  console.log('transaction', transaction);
+  // console.log('transaction', transaction);
 
   const serializedTx = ethers.utils.serializeTransaction(transaction);
-  console.log('serializedTx', serializedTx);
+  // console.log('serializedTx', serializedTx);
 
   const rlpEncodedTxn = ethers.utils.arrayify(serializedTx);
-  console.log('rlpEncodedTxn: ', rlpEncodedTxn);
+  // console.log('rlpEncodedTxn: ', rlpEncodedTxn);
 
   const unsignedTxn = ethers.utils.keccak256(rlpEncodedTxn);
-  console.log('unsignedTxn: ', unsignedTxn);
+  // console.log('unsignedTxn: ', unsignedTxn);
 
   const authSig = await LitJsSdk.checkAndSignAuthMessage({
     chain: 'mumbai',
@@ -122,15 +123,15 @@ export async function signTransaction(transaction, publicKey) {
       sigName: 'sig1',
     },
   });
-  console.log('resp: ', resp);
+  // console.log('resp: ', resp);
   const sig = resp.signatures.sig1;
-  console.log('sig: ', sig);
+  // console.log('sig: ', sig);
 
   const signedTxn = ethers.utils.serializeTransaction(
     transaction,
     sig.signature
   );
-  console.log('signedTxn: ', signedTxn);
+  // console.log('signedTxn: ', signedTxn);
 
   return signedTxn;
 }
@@ -144,7 +145,7 @@ export async function sendTransaction(transaction, publicKey, rpcUrl) {
 
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
   const sentTxn = await provider.sendTransaction(signedTxn);
-  console.log('sentTxn', sentTxn);
+  // console.log('sentTxn', sentTxn);
 
   return sentTxn;
 }

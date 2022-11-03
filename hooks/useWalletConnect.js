@@ -12,8 +12,8 @@ import {
   signPersonalMessage,
   signTransaction,
   sendTransaction,
-} from '../utils/lit';
-import useAppContext from './useAppContext';
+} from '../utils/lit-client';
+import useCloudWallet from './useCloudWallet';
 
 const WC_URI_KEY = 'test_dapp_wc_uri';
 const WC_CHAIN_ID = 80001;
@@ -77,9 +77,8 @@ const filterOutWcRequest = (id, requests) => {
 };
 
 const useWalletConnect = () => {
-  const [wcConnector, setWcConnector] = useState();
-  const [wcConnected, setWcConnected] = useState(false);
-  const [wcPeerMeta, setWcPeerMeta] = useState(null);
+  const [wcStatus, setWcStatus] = useState('disconnected');
+  const [wcConnector, setWcConnector] = useState(null);
   const [wcRequests, _setWcRequests] = useState([]);
   const [wcResults, _setWcResults] = useState([]);
 
@@ -95,7 +94,7 @@ const useWalletConnect = () => {
     _setWcResults(data);
   };
 
-  const { currentPKP } = useAppContext();
+  const { currentPKP } = useCloudWallet();
 
   // Disconnect from WalletConnect
   const wcDisconnect = useCallback(async () => {
@@ -104,20 +103,18 @@ const useWalletConnect = () => {
     try {
       await wcConnector?.killSession();
       localStorage.removeItem(WC_URI_KEY);
-      setWcConnector(undefined);
-      setWcConnected(false);
-      setWcPeerMeta(null);
+      setWcStatus('disconnected');
+      setWcConnector(null);
       setWcRequests([]);
       setWcResults([]);
     } catch (error) {
-      console.log('Error trying to close WalletConnect session: ', error);
+      console.error('Error trying to close WalletConnect session: ', error);
     }
   }, [wcConnector]);
 
   // Initialize WalletConnect connector
   const wcConnect = useCallback(
     async ({ uri, session }) => {
-      console.log('wcConnect', uri);
       const wcConnector = new WalletConnect({
         uri: uri,
         session: session,
@@ -129,7 +126,11 @@ const useWalletConnect = () => {
         storageId: WC_URI_KEY,
       });
       setWcConnector(wcConnector);
-      setWcPeerMeta(wcConnector.peerMeta);
+      setWcStatus(wcConnector.connected ? 'connected' : 'connecting');
+
+      if (!wcConnector.connected) {
+        wcConnector.createSession();
+      }
 
       console.log('Created connector', wcConnector);
 
@@ -142,11 +143,19 @@ const useWalletConnect = () => {
         }
 
         wcConnector.approveSession({
-          accounts: [currentPKP.ethAddress],
+          accounts: [currentPKP?.ethAddress],
           chainId: WC_CHAIN_ID,
         });
+      });
 
-        setWcPeerMeta(payload.params[0].peerMeta);
+      wcConnector.on('connect', (error, payload) => {
+        console.log('On connect', payload);
+
+        if (error) {
+          throw error;
+        }
+
+        setWcStatus('connected');
       });
 
       // Subscribe to call_request and approve requests automatically
@@ -162,7 +171,7 @@ const useWalletConnect = () => {
         );
 
         try {
-          let result = await handleRequest(payload, currentPKP.pubkey);
+          let result = await handleRequest(payload, currentPKP?.pubkey);
 
           wcConnector.approveRequest({
             id: payload.id,
@@ -186,7 +195,7 @@ const useWalletConnect = () => {
           setWcResults(
             addToWcResults(
               {
-                status: 'success',
+                status: 'error',
                 payload: payload,
                 result: null,
                 error: err,
@@ -199,13 +208,6 @@ const useWalletConnect = () => {
         }
       });
 
-      wcConnector.on('connect', (error, payload) => {
-        if (error) {
-          throw error;
-        }
-        setWcConnected(true);
-      });
-
       wcConnector.on('disconnect', error => {
         if (error) {
           throw error;
@@ -216,56 +218,25 @@ const useWalletConnect = () => {
     [currentPKP, wcDisconnect]
   );
 
-  // Approve session request
-  const wcApproveSession = useCallback(
-    async ethAddress => {
-      console.log('Approve session request');
-
-      try {
-        await wcConnector?.approveSession({
-          accounts: [ethAddress],
-          chainId: WC_CHAIN_ID,
-        });
-      } catch (error) {
-        console.log('Error trying to approve WalletConnect session: ', error);
-      }
-    },
-    [wcConnector]
-  );
-
-  // Reject session request
-  const wcRejectSession = useCallback(async () => {
-    console.log('Rejecting WalletConnect session');
-
-    try {
-      await wcConnector?.rejectSession();
-
-      setWcPeerMeta(null);
-    } catch (error) {
-      console.log('Error trying to reject WalletConnect session: ', error);
-    }
-  }, [wcConnector, wcPeerMeta]);
-
   useEffect(() => {
-    // Check if there is a WalletConnect URI in local storage
-    if (!wcConnector) {
+    // Check if cloud wallet exists but WalletConnect is not connected
+    if (currentPKP && !wcConnector) {
       const wcSession = localStorage.getItem(WC_URI_KEY);
+
+      // Reconnect if URI exists in local storage
       if (wcSession) {
-        console.log('wcSession', JSON.parse(wcSession));
         wcConnect({ session: JSON.parse(wcSession) });
       }
     }
-  }, [wcConnector, wcConnect]);
+  }, [currentPKP, wcConnector, wcConnect, wcDisconnect]);
 
   return {
-    wcConnected,
-    wcPeerMeta,
+    wcStatus,
+    wcConnector,
     wcRequests,
     wcResults,
     wcConnect,
     wcDisconnect,
-    wcApproveSession,
-    wcRejectSession,
   };
 };
 
