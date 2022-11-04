@@ -29,14 +29,32 @@ const fetchPKPsByAddress = async address => {
 };
 
 const useCloudWallet = () => {
-  const [currentPKP, setCurrentPKP] = useState(undefined);
+  const [loading, setLoading] = useState(true);
+  const [currentOwner, setCurrentOwner] = useState(null);
+  const [currentPKP, setCurrentPKP] = useState(null);
   const [myPKPs, setMyPKPs] = useState([]);
 
   const { address } = useAccount();
   const { data: signer } = useSigner();
 
+  // Disconnect from WalletConnect
+  const cwDisconnect = useCallback(async () => {
+    console.log('Clear cloud wallet');
+
+    try {
+      setCurrentOwner(null);
+      setCurrentPKP(null);
+      setMyPKPs([]);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error trying to clear cloud wallet session: ', error);
+    }
+  }, []);
+
   useEffect(() => {
     async function fetchMyPKPs() {
+      setLoading(true);
+
       const pkps = await fetchPKPsByAddress(address);
 
       if (pkps.length > 0) {
@@ -46,6 +64,9 @@ const useCloudWallet = () => {
         setCurrentPKP(null);
         setMyPKPs([]);
       }
+
+      setCurrentOwner(address);
+      setLoading(false);
     }
 
     // Check if wallet is connected
@@ -55,16 +76,22 @@ const useCloudWallet = () => {
         connectLitContracts(signer);
       }
 
-      // Fetch current user's PKPs if not previously fetched
-      if (currentPKP === undefined) {
+      // Fetch current user's PKPs if not previously fetched or if addresses changed
+      if (!currentPKP || currentOwner !== address) {
         fetchMyPKPs();
+      } else {
+        setLoading(false);
       }
+    } else {
+      setLoading(false);
     }
-  }, [currentPKP, address, signer]);
+  }, [currentOwner, currentPKP, address, signer]);
 
   return {
+    loading,
     currentPKP,
     myPKPs,
+    cwDisconnect,
   };
 };
 

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { truncate } from '../utils/helpers';
 import PendingRequests from './PendingRequests';
-import RecentActivity from './RecentActivity';
-import ActiveSessions from './ActiveSessions';
+import WalletCard from './WalletCard';
+import Connections from './Connections';
+import Activity from './activity';
 
 export default function CloudWallet({
   currentPKP,
@@ -12,18 +14,22 @@ export default function CloudWallet({
 }) {
   return (
     <>
-      <div className="cloud-wallet-card">
-        <span>My cloud wallet</span>
-        <h1>
-          {currentPKP?.ethAddress ? truncate(currentPKP.ethAddress) : 'n/a'}
-        </h1>
+      <WalletCard currentPKP={currentPKP} />
+
+      <div className="section">
+        <p className="section__title">Connected dapp</p>
+        <Connections wcConnector={wcConnector} wcDisconnect={wcDisconnect} />
       </div>
 
-      <ActiveSessions wcConnector={wcConnector} wcDisconnect={wcDisconnect} />
+      <div className="section">
+        <p className="section__title">Pending requests ({wcRequests.length})</p>
+        <PendingRequests wcRequests={wcRequests} />
+      </div>
 
-      <PendingRequests wcRequests={wcRequests} />
-
-      <RecentActivity wcResults={wcResults} />
+      <div className="section">
+        <p className="section__title">Recent activity ({wcResults.length})</p>
+        <Activity wcResults={wcResults} />
+      </div>
     </>
   );
 }

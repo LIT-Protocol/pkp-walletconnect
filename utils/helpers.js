@@ -85,3 +85,27 @@ export const getTransactionToSend = (txParams, chainId) => {
 
   return formattedTx;
 };
+
+export const getPayloadName = payload => {
+  let name = 'Unknown';
+
+  switch (payload.method) {
+    case 'eth_sign':
+    case 'personal_sign':
+      name = 'Sign message';
+      break;
+    case 'eth_signTypedData':
+      name = 'Sign typed data';
+      break;
+    case 'eth_signTransaction':
+      name = 'Sign transaction';
+      break;
+    case 'eth_sendTransaction':
+      name = 'Send transaction';
+      break;
+    default:
+      break;
+  }
+
+  return name;
+};

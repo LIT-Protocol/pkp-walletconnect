@@ -60,13 +60,13 @@ const rejectRequestWithMessage = (wcConnector, payload, message) => {
 
 // Update list of WalletConnect call requests
 const addToWcRequests = (request, requests) => {
-  const updatedList = [...requests, request];
+  const updatedList = [request, ...requests];
   return updatedList;
 };
 
 // Update list of WalletConnect call request results
 const addToWcResults = (result, results) => {
-  const updatedList = [...results, result];
+  const updatedList = [result, ...results];
   return updatedList;
 };
 

@@ -1,23 +1,35 @@
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
-import { useConnect, useAccount } from 'wagmi';
+import { useAccount } from 'wagmi';
 import useHasMounted from '../hooks/useHasMounted';
 import useWalletConnect from '../hooks/useWalletConnect';
+import useCloudWallet from '../hooks/useCloudWallet';
 import ConnectWallet from '../components/ConnectWallet';
 import CloudWallet from '../components/CloudWallet';
 import Layout from '../components/Layout';
+import Footer from '../components/Footer';
+import Connections from '../components/Connections';
+import Activity from '../components/activity';
 import ConnectDapp from '../components/ConnectDapp';
-import useCloudWallet from '../hooks/useCloudWallet';
+import MintPKP from '../components/MintPKP';
+import Loading from '../components/Loading';
+
+const Views = Object.freeze({
+  HOME: 1,
+  CONNECTIONS: 2,
+  ACTIVITY: 3,
+  LOADING: 4,
+  NEED_PKP: 5,
+});
 
 export default function Home() {
-  // App state
-  const { currentPKP } = useCloudWallet();
-  const [status, setStatus] = useState('CONNECT_WALLET');
+  const [view, setView] = useState(Views.LOADING);
+
+  const { loading, currentPKP } = useCloudWallet();
+
   const hasMounted = useHasMounted();
 
   // wagmi hooks
-  const { connect, connectors, error, isLoading, pendingConnector } =
-    useConnect();
   const { isConnected } = useAccount();
 
   // WalletConnect hooks
@@ -31,24 +43,36 @@ export default function Home() {
   } = useWalletConnect();
 
   useEffect(() => {
-    console.log('wcStatus', wcStatus);
-    if (isConnected) {
-      if (wcConnector?.connected) {
-        setStatus('WC_CONNECTED');
-      } else {
-        if (!currentPKP) {
-          setStatus('NEED_CLOUD_WALLET');
-        } else {
-          setStatus('CONNECT_DAPP');
-        }
-      }
+    if (loading) {
+      setView(Views.LOADING);
     } else {
-      setStatus('CONNECT_WALLET');
+      if (!currentPKP) {
+        setView(Views.NEED_PKP);
+      } else {
+        setView(Views.HOME);
+      }
     }
-  }, [currentPKP, isConnected, wcStatus, wcConnector]);
+  }, [loading, currentPKP]);
 
   if (!hasMounted) {
     return null;
+  }
+
+  if (!isConnected) {
+    return (
+      <Layout>
+        <Head>
+          <title>Lit PKP WalletConnect</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+        <main className="container">
+          <ConnectWallet />
+        </main>
+        <footer className="footer">
+          <span className="footer__caption">Powered by Lit</span>
+        </footer>
+      </Layout>
+    );
   }
 
   return (
@@ -57,17 +81,40 @@ export default function Home() {
         <title>Lit PKP WalletConnect</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      {status === 'CONNECT_WALLET' && <ConnectWallet />}
-      {status === 'NEED_CLOUD_WALLET' && <p>You need a cloud wallet</p>}
-      {status === 'CONNECT_DAPP' && <ConnectDapp wcConnect={wcConnect} />}
-      {status === 'WC_CONNECTED' && (
-        <CloudWallet
-          currentPKP={currentPKP}
-          wcConnector={wcConnector}
-          wcRequests={wcRequests}
-          wcResults={wcResults}
-          wcDisconnect={wcDisconnect}
-        />
+      <main className="container">
+        {view === Views.LOADING && <Loading />}
+        {view === Views.NEED_PKP && <MintPKP />}
+        {view === Views.HOME && (
+          <CloudWallet
+            currentPKP={currentPKP}
+            wcConnector={wcConnector}
+            wcRequests={wcRequests}
+            wcResults={wcResults}
+            wcDisconnect={wcDisconnect}
+          />
+        )}
+        {view === Views.CONNECTIONS && (
+          <div className="sub-page">
+            <h2 className="sub-page__title">Connected dapps</h2>
+            {wcConnector?.connected ? (
+              <Connections
+                wcConnector={wcConnector}
+                wcDisconnect={wcDisconnect}
+              />
+            ) : (
+              <ConnectDapp wcConnect={wcConnect} />
+            )}
+          </div>
+        )}
+        {view === Views.ACTIVITY && (
+          <div className="sub-page">
+            <h2 className="sub-page__title">Recent activity</h2>
+            <Activity wcResults={wcResults} />
+          </div>
+        )}
+      </main>
+      {view !== Views.LOADING && view !== Views.NEED_PKP && (
+        <Footer view={view} setView={setView} />
       )}
     </Layout>
   );

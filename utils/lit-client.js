@@ -23,11 +23,12 @@ const SIGN_TRANSACTION_FILE = 'QmRwN9GKHvCn4Vk7biqtr6adjXMs7PzzYPCzNCRjPFiDjm';
 let litNodeClient = null;
 
 export async function initLitNodeClient() {
-  litNodeClient = new LitJsSdk.LitNodeClient({
+  const client = new LitJsSdk.LitNodeClient({
     litNetwork: 'mumbai',
     debug: false,
   });
-  await litNodeClient.connect();
+  await client.connect();
+  litNodeClient = client;
 }
 
 export async function signPersonalMessage(message, publicKey) {
@@ -147,7 +148,7 @@ export async function sendTransaction(transaction, publicKey, rpcUrl) {
   const sentTxn = await provider.sendTransaction(signedTxn);
   // console.log('sentTxn', sentTxn);
 
-  return sentTxn;
+  return sentTxn.hash;
 }
 
 export function getLitNodeClient() {
