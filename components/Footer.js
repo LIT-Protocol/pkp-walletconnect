@@ -1,14 +1,14 @@
-export default function Footer({ view, setView }) {
+export default function Footer({ tab, setTab }) {
   return (
     <footer className="footer">
       <div className="footer__links">
         <button
           onClick={e => {
             e.preventDefault();
-            setView(1);
+            setTab(1);
           }}
           className={
-            view === 1 ? 'footer__link footer__link--active' : 'footer__link'
+            tab === 1 ? 'footer__link footer__link--active' : 'footer__link'
           }
         >
           <svg
@@ -31,10 +31,10 @@ export default function Footer({ view, setView }) {
         <button
           onClick={e => {
             e.preventDefault();
-            setView(2);
+            setTab(2);
           }}
           className={
-            view === 2 ? 'footer__link footer__link--active' : 'footer__link'
+            tab === 2 ? 'footer__link footer__link--active' : 'footer__link'
           }
         >
           <svg
@@ -57,10 +57,10 @@ export default function Footer({ view, setView }) {
         <button
           onClick={e => {
             e.preventDefault();
-            setView(3);
+            setTab(3);
           }}
           className={
-            view === 3 ? 'footer__link footer__link--active' : 'footer__link'
+            tab === 3 ? 'footer__link footer__link--active' : 'footer__link'
           }
         >
           <svg

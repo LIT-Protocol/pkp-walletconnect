@@ -1,9 +1,7 @@
 import { useCallback } from 'react';
 import { useAccount, useDisconnect } from 'wagmi';
-import useHasMounted from '../hooks/useHasMounted';
 import { truncate } from '../utils/helpers';
 import useWalletConnect from '../hooks/useWalletConnect';
-import useCloudWallet from '../hooks/useCloudWallet';
 
 const icon = (
   <svg
@@ -20,25 +18,18 @@ const icon = (
   </svg>
 );
 
-export default function Navbar() {
+export default function Header() {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { wcDisconnect } = useWalletConnect();
-  const { cwDisconnect } = useCloudWallet();
-
-  // const handleDisconnect = () => {
-  //   disconnect();
-  //   wcDisconnect();
-  // };
 
   const handleDisconnect = useCallback(
     event => {
       event.preventDefault();
       disconnect();
       wcDisconnect();
-      cwDisconnect();
     },
-    [disconnect, wcDisconnect, cwDisconnect]
+    [disconnect, wcDisconnect]
   );
 
   if (isConnected) {
@@ -46,10 +37,6 @@ export default function Navbar() {
       <header className="header">
         {icon}
         <div className="header__row">
-          {/* <span>{truncate(address)}</span>
-          <button className="header__btn" onClick={handleDisconnect}>
-            Disconnect
-          </button> */}
           <button className="header__btn" onClick={handleDisconnect}>
             <span className="header__btn__status"></span>
             {truncate(address)}

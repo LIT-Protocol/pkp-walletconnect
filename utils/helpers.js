@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import converter from 'hex2dec';
+import { convertHexToUtf8 } from '@walletconnect/utils';
 
 export const a11yProps = index => {
   return {
@@ -109,3 +110,11 @@ export const getPayloadName = payload => {
 
   return name;
 };
+
+export function convertHexToUtf8IfPossible(hex) {
+  try {
+    return convertHexToUtf8(hex);
+  } catch (e) {
+    return hex;
+  }
+}

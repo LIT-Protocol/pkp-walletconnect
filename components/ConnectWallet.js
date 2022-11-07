@@ -6,6 +6,7 @@ export default function ConnectWallet() {
 
   return (
     <div className="vertical-stack">
+      {error && <p>{error.message}</p>}
       <h1>Connect wallet</h1>
       {connectors.map(connector => (
         <button
@@ -21,8 +22,6 @@ export default function ConnectWallet() {
             ' (connecting)'}
         </button>
       ))}
-
-      {error && <p>{error.message}</p>}
     </div>
   );
 }
