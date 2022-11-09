@@ -604,4 +604,10 @@ body {
       }
     }
   }
+
+  &__message {
+    background-color: #f3f4f6;
+    border-radius: 0.25rem;
+    padding: 1rem;
+  }
 }

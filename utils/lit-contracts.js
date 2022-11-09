@@ -9,7 +9,6 @@ let routerContract = null;
 // Connect to smart contract
 const getContract = (signer, contractAddress, contractABI) => {
   try {
-    // const signer = provider.getSigner();
     const contract = new ethers.Contract(contractAddress, contractABI, signer);
     return contract;
   } catch (error) {

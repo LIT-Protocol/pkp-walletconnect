@@ -4,7 +4,6 @@ import {
   getTypedDataToSign,
   getTransactionToSign,
   getTransactionToSend,
-  convertHexToUtf8IfPossible,
 } from '../utils/helpers';
 import { CodeBlock, codepen } from 'react-code-blocks';
 
@@ -65,18 +64,28 @@ export default function CallRequest({
         <p>{description}</p>
         <div className="section">
           {wcRequest.payload.method === 'eth_sign' && (
-            <p>{wcRequest.payload.params[1]}</p>
+            <p className="call-request__message">
+              {getMessageToSign(wcRequest.payload.params[1])}
+            </p>
           )}
           {wcRequest.payload.method === 'personal_sign' && (
-            <p>{convertHexToUtf8IfPossible(wcRequest.payload.params[0])}</p>
+            <p className="call-request__message">
+              {getPersonalMessageToSign(wcRequest.payload.params[0])}
+            </p>
           )}
           {wcRequest.payload.method === 'eth_signTypedData' && (
-            <p>{JSON.stringify(wcRequest.payload.params, null, '\t')}</p>
+            <p className="call-request__message">
+              {getTypedDataToSign(wcRequest.payload.params[1])}
+            </p>
           )}
           {wcRequest.payload.method === 'eth_signTransaction' && (
             <CodeBlock
               showLineNumbers={false}
-              text={JSON.stringify(wcRequest.payload.params[0], null, 2)}
+              text={JSON.stringify(
+                getTransactionToSign(wcRequest.payload.params[0]),
+                null,
+                2
+              )}
               theme={codepen}
               language="json"
             />
@@ -84,7 +93,11 @@ export default function CallRequest({
           {wcRequest.payload.method === 'eth_sendTransaction' && (
             <CodeBlock
               showLineNumbers={false}
-              text={JSON.stringify(wcRequest.payload.params[0], null, 2)}
+              text={JSON.stringify(
+                getTransactionToSend(wcRequest.payload.params[0]),
+                null,
+                2
+              )}
               theme={codepen}
               language="json"
             />

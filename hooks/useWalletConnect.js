@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { ethers } from 'ethers';
 import WalletConnect from '@walletconnect/client';
 import {
   getMessageToSign,
@@ -13,10 +14,7 @@ import {
   signTransaction,
   sendTransaction,
 } from '../utils/lit-client';
-
-const WC_URI_KEY = 'test_dapp_wc_uri';
-const WC_CHAIN_ID = 80001;
-const WC_RPC_URL = 'https://matic-mumbai.chainstacklabs.com';
+import { WC_URI_KEY, WC_CHAIN_ID, WC_RPC_URL } from '../utils/constants';
 
 // Handle WalletConnect request
 const handleRequest = async (payload, pubkey) => {
@@ -159,6 +157,7 @@ const useWalletConnect = () => {
           )
         );
         setWcPendingRequest(payload.id);
+        // setWcPendingRequest(payload);
         setWcStatus('call_request');
       });
 

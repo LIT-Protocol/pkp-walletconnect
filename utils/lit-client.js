@@ -1,6 +1,15 @@
 import LitJsSdk from 'lit-js-sdk';
 import { ethers } from 'ethers';
-import { joinSignature } from '@ethersproject/bytes';
+import { serialize, recoverAddress } from '@ethersproject/transactions';
+import {
+  hexlify,
+  splitSignature,
+  hexZeroPad,
+  joinSignature,
+} from '@ethersproject/bytes';
+import { recoverPublicKey, computePublicKey } from '@ethersproject/signing-key';
+import { verifyMessage } from '@ethersproject/wallet';
+import { providers } from 'ethers';
 
 const PERSONAL_SIGN_CODE = `
   const go = async () => {
@@ -52,13 +61,27 @@ export async function signPersonalMessage(message, publicKey) {
   const signatures = response.signatures;
   // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
-
+  const dataSigned = sig.dataSigned;
   const encodedSig = joinSignature({
     r: '0x' + sig.r,
     s: '0x' + sig.s,
     v: sig.recid,
   });
-  // console.log('encodedSig', encodedSig);
+  console.log('encodedSig', encodedSig);
+  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
+  console.log('dataSigned', dataSigned);
+  const splitSig = splitSignature(encodedSig);
+  console.log('splitSig', splitSig);
+
+  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
+  console.log('uncompressed recoveredPubkey', recoveredPubkey);
+  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
+  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
+  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
+  console.log('recoveredAddress', recoveredAddress);
+
+  const recoveredAddressViaMessage = verifyMessage(message, encodedSig);
+  console.log('recoveredAddressViaMessage', recoveredAddressViaMessage);
 
   return encodedSig;
 }
@@ -84,13 +107,24 @@ export async function signMessage(message, publicKey) {
   const signatures = response.signatures;
   // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
-
+  const dataSigned = sig.dataSigned;
   const encodedSig = joinSignature({
     r: '0x' + sig.r,
     s: '0x' + sig.s,
     v: sig.recid,
   });
-  // console.log('encodedSig', encodedSig);
+  console.log('encodedSig', encodedSig);
+  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
+  console.log('dataSigned', dataSigned);
+  const splitSig = splitSignature(encodedSig);
+  console.log('splitSig', splitSig);
+
+  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
+  console.log('uncompressed recoveredPubkey', recoveredPubkey);
+  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
+  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
+  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
+  console.log('recoveredAddress', recoveredAddress);
 
   return encodedSig;
 }
@@ -115,7 +149,7 @@ export async function signTransaction(transaction, publicKey) {
     chain: 'mumbai',
   });
 
-  const resp = await litNodeClient.executeJs({
+  const response = await litNodeClient.executeJs({
     ipfsId: SIGN_TRANSACTION_FILE,
     authSig,
     jsParams: {
@@ -124,15 +158,34 @@ export async function signTransaction(transaction, publicKey) {
       sigName: 'sig1',
     },
   });
-  // console.log('resp: ', resp);
-  const sig = resp.signatures.sig1;
+  // console.log('response: ', response);
+  const sig = response.signatures.sig1;
   // console.log('sig: ', sig);
+  const dataSigned = sig.dataSigned;
+  const encodedSig = joinSignature({
+    r: '0x' + sig.r,
+    s: '0x' + sig.s,
+    v: sig.recid,
+  });
+
+  console.log('encodedSig', encodedSig);
+  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
+  console.log('dataSigned', dataSigned);
+  const splitSig = splitSignature(encodedSig);
+  console.log('splitSig', splitSig);
+
+  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
+  console.log('uncompressed recoveredPubkey', recoveredPubkey);
+  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
+  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
+  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
+  console.log('recoveredAddress', recoveredAddress);
 
   const signedTxn = ethers.utils.serializeTransaction(
     transaction,
     sig.signature
   );
-  // console.log('signedTxn: ', signedTxn);
+  console.log('signedTxn: ', signedTxn);
 
   return signedTxn;
 }
@@ -146,7 +199,7 @@ export async function sendTransaction(transaction, publicKey, rpcUrl) {
 
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
   const sentTxn = await provider.sendTransaction(signedTxn);
-  // console.log('sentTxn', sentTxn);
+  console.log('sentTxn', sentTxn);
 
   return sentTxn.hash;
 }

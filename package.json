@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@ethersproject/bytes": "^5.7.0",
+    "@ethersproject/transactions": "^5.7.0",
     "@ethersproject/wallet": "^5.7.0",
     "@walletconnect/client": "^1.8.0",
     "@walletconnect/utils": "^2.1.1",

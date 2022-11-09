@@ -10,6 +10,7 @@ import {
   getPKPNFTTokenIdsByAddress,
   getPubkey,
 } from '../utils/lit-contracts';
+import { WC_URI_KEY } from '../utils/constants';
 import ConnectWallet from '../components/ConnectWallet';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
@@ -20,9 +21,6 @@ import ActivityTab from '../components/tabs/ActivityTab';
 import MintPKP from '../components/MintPKP';
 import SessionRequest from '../components/SessionRequest';
 import CallRequest from '../components/CallRequest';
-import Link from 'next/link';
-
-const WC_URI_KEY = 'test_dapp_wc_uri';
 
 const fetchPKPsByAddress = async address => {
   const tokenIds = await getPKPNFTTokenIdsByAddress(address);
@@ -56,7 +54,7 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const { data: signer } = useSigner();
 
-  // WalletConnect hooks
+  // WalletConnect hook
   const {
     wcStatus,
     wcConnector,
@@ -186,7 +184,7 @@ export default function Home() {
             <HomeTab
               currentPKP={currentPKP}
               wcConnector={wcConnector}
-              wcPendingRequest={wcPendingRequest}
+              // wcPendingRequest={wcPendingRequest}
               wcRequests={wcRequests}
               wcDisconnect={wcDisconnect}
             />

@@ -3,17 +3,18 @@ import { QrReader } from 'react-qr-reader';
 
 export default function QrHandler({ wcConnect }) {
   const [show, setShow] = useState(false);
+  const [uri, setUri] = useState('');
 
   function onShowScanner() {
     setShow(true);
   }
 
-  const handleQrPaste = useCallback(
-    uri => {
+  useEffect(() => {
+    if (uri) {
       wcConnect({ uri: uri });
-    },
-    [wcConnect]
-  );
+      setUri('');
+    }
+  }, [uri, wcConnect]);
 
   return (
     <div className="qr-reader">
@@ -23,14 +24,8 @@ export default function QrHandler({ wcConnect }) {
             <QrReader
               style={{ width: '100%' }}
               onResult={(result, error) => {
-                console.log('result', result);
-                if (!!result && result?.text) {
-                  handleQrPaste(result.text);
-                  setShow(false);
-                }
-                if (!!error) {
-                  console.info(error);
-                  setShow(false);
+                if (!!result) {
+                  setUri(result?.text);
                 }
               }}
             />

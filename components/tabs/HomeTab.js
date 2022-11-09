@@ -5,7 +5,7 @@ import RequestCard from '../RequestCard';
 export default function HomeTab({
   currentPKP,
   wcConnector,
-  wcPendingRequest,
+  // wcPendingRequest,
   wcRequests,
   wcDisconnect,
 }) {
@@ -38,8 +38,7 @@ export default function HomeTab({
       <div className="section">
         <p className="section__title">Recent activity</p>
         {Object.keys(wcRequests).length > 0 ? (
-          Object.entries(wcRequests)
-          .map((entry, index) => (
+          Object.entries(wcRequests).map((entry, index) => (
             <RequestCard key={entry[0]} request={wcRequests[entry[0]]} />
           ))
         ) : (

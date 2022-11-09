@@ -1,6 +1,5 @@
-import { ethers } from 'ethers';
+import { ethers, utils } from 'ethers';
 import converter from 'hex2dec';
-import { convertHexToUtf8 } from '@walletconnect/utils';
 
 export const a11yProps = index => {
   return {
@@ -33,15 +32,11 @@ export const getMessageToSign = data => {
 };
 
 export const getPersonalMessageToSign = data => {
-  return ethers.utils.isHexString(data) ? ethers.utils.arrayify(data) : data;
+  return convertHexToUtf8(data);
 };
 
 export const getTypedDataToSign = data => {
-  if (typeof data === 'string') {
-    return JSON.parse(data);
-  }
-
-  return data;
+  return JSON.parse(data);
 };
 
 export const getTransactionToSign = txParams => {
@@ -111,10 +106,10 @@ export const getPayloadName = payload => {
   return name;
 };
 
-export function convertHexToUtf8IfPossible(hex) {
-  try {
-    return convertHexToUtf8(hex);
-  } catch (e) {
-    return hex;
+export function convertHexToUtf8(value) {
+  if (utils.isHexString(value)) {
+    return utils.toUtf8String(value);
   }
+
+  return value;
 }
