@@ -1,12 +1,11 @@
 import WalletCard from '../WalletCard';
 import SessionCard from '../SessionCard';
-import RequestCard from '../RequestCard';
+import ResultCard from '../ResultCard';
 
 export default function HomeTab({
   currentPKP,
   wcConnector,
-  // wcPendingRequest,
-  wcRequests,
+  wcResults,
   wcDisconnect,
 }) {
   return (
@@ -24,22 +23,11 @@ export default function HomeTab({
         )}
       </div>
 
-      {/* <div className="section">
-        <p className="section__title">Pending request</p>
-        {!wcPendingRequest && !wcRequests && !wcRequests[wcPendingRequest] ? (
-          <RequestCard request={wcRequests[wcPendingRequest]} />
-        ) : (
-          <div className="empty-state">
-            <p>No pending requests</p>
-          </div>
-        )}
-      </div> */}
-
       <div className="section">
         <p className="section__title">Recent activity</p>
-        {Object.keys(wcRequests).length > 0 ? (
-          Object.entries(wcRequests).map((entry, index) => (
-            <RequestCard key={entry[0]} request={wcRequests[entry[0]]} />
+        {Object.keys(wcResults).length > 0 ? (
+          Object.entries(wcResults).map((entry, index) => (
+            <ResultCard key={entry[0]} request={wcResults[entry[0]]} />
           ))
         ) : (
           <div className="empty-state">

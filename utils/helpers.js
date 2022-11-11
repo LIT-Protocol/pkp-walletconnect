@@ -1,5 +1,5 @@
-import { ethers, utils } from 'ethers';
 import converter from 'hex2dec';
+import { ethers } from 'ethers';
 
 export const a11yProps = index => {
   return {
@@ -33,10 +33,6 @@ export const getMessageToSign = data => {
 
 export const getPersonalMessageToSign = data => {
   return convertHexToUtf8(data);
-};
-
-export const getTypedDataToSign = data => {
-  return JSON.parse(data);
 };
 
 export const getTransactionToSign = txParams => {
@@ -107,8 +103,8 @@ export const getPayloadName = payload => {
 };
 
 export function convertHexToUtf8(value) {
-  if (utils.isHexString(value)) {
-    return utils.toUtf8String(value);
+  if (ethers.utils.isHexString(value)) {
+    return ethers.utils.toUtf8String(value);
   }
 
   return value;

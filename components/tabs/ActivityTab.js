@@ -1,12 +1,12 @@
-import RequestCard from '../RequestCard';
+import ResultCard from '../ResultCard';
 
-export default function ActivityTab({ wcRequests }) {
+export default function ActivityTab({ wcResults }) {
   return (
     <div className="tab">
       <h2 className="tab__title">Recent activity</h2>
-      {Object.keys(wcRequests).length > 0 ? (
-        Object.keys(wcRequests).map((key, index) => (
-          <RequestCard key={key} request={wcRequests[key]} />
+      {Object.keys(wcResults).length > 0 ? (
+        Object.keys(wcResults).map((key, index) => (
+          <ResultCard key={key} request={wcResults[key]} />
         ))
       ) : (
         <div className="empty-state">

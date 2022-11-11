@@ -2,6 +2,9 @@
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
 
+@import '@radix-ui/colors/blackA.css';
+@import '@radix-ui/colors/blue.css';
+
 $max-width: 32rem;
 $wallet-bg: white;
 $sm-breakpoint: 576px;
@@ -16,8 +19,11 @@ body {
   flex-direction: column;
   justify-content: center;
   height: 100vh;
-  padding: 1rem;
+  padding: 0.5rem;
   overflow: hidden;
+  @media (min-width: $sm-breakpoint) {
+    padding: 1rem;
+  }
 }
 
 .cloud-wallet {
@@ -27,7 +33,7 @@ body {
   height: 100%;
   max-height: calc(100vh - 2rem);
   max-width: $max-width;
-  margin: 1rem auto;
+  margin: auto;
   box-shadow: 0 1px 1px hsl(0deg 0% 0% / 0.075),
     0 2px 2px hsl(0deg 0% 0% / 0.075), 0 4px 4px hsl(0deg 0% 0% / 0.075),
     0 8px 8px hsl(0deg 0% 0% / 0.075), 0 16px 16px hsl(0deg 0% 0% / 0.075);
@@ -164,9 +170,14 @@ body {
     }
 
     &__icon {
-      width: 2rem;
-      height: 2rem;
+      width: 1.5rem;
+      height: 1.5rem;
       margin-bottom: 0.1rem;
+
+      @media (min-width: $sm-breakpoint) {
+        width: 2rem;
+        height: 2rem;
+      }
     }
   }
 
@@ -217,23 +228,23 @@ body {
     display: flex;
     align-items: center;
   }
+}
 
-  &__copy-btn {
-    padding: 0.5rem;
-    border: 1px solid #eeeeee;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    margin-left: 0.5rem;
-    cursor: pointer;
-    background-color: #f3f4f6;
-    &:hover {
-      background-color: #e5e7eb;
-    }
+.copy-btn {
+  padding: 0.5rem;
+  border: 1px solid #eeeeee;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  background-color: #f3f4f6;
+  &:hover {
+    background-color: #e5e7eb;
+  }
 
-    &__icon {
-      width: 1rem;
-      height: 1rem;
-    }
+  &__icon {
+    width: 1rem;
+    height: 1rem;
   }
 }
 
@@ -361,6 +372,20 @@ body {
   &__title {
     margin-bottom: 1rem;
   }
+
+  &__btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #eeeeee;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    margin-top: 1.5rem;
+    width: 100%;
+    cursor: pointer;
+    background-color: #f3f4f6;
+    &:hover {
+      background-color: #e5e7eb;
+    }
+  }
 }
 
 .session-card {
@@ -370,16 +395,34 @@ body {
   padding: 1rem;
   border: 1px solid #eeeeee;
   border-radius: 0.5rem;
+  flex-wrap: wrap;
+
+  @media (min-width: $sm-breakpoint) {
+    flex-wrap: nowrap;
+  }
 
   &__info {
     display: flex;
     align-items: flex-start;
     flex-grow: 1;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+
+    @media (min-width: $sm-breakpoint) {
+      flex-wrap: nowrap;
+      margin-bottom: 0;
+    }
+  }
+
+  &__description {
+    font-size: 0.875rem;
+    margin: 0.25rem 0;
   }
 
   &__icon {
     width: 3rem;
     height: 3rem;
+
     margin-right: 1rem;
     border-radius: 0.25rem;
   }
@@ -395,16 +438,17 @@ body {
 
   &__btn {
     flex-shrink: 0;
-    margin-left: 1rem;
     padding: 0.25rem 0.5rem;
     border: 1px solid #eeeeee;
     border-radius: 0.5rem;
     font-size: 0.75rem;
-    margin-left: 0.5rem;
     cursor: pointer;
     background-color: #f3f4f6;
     &:hover {
       background-color: #e5e7eb;
+    }
+    @media (min-width: $sm-breakpoint) {
+      margin-left: 1rem;
     }
   }
 }
@@ -480,31 +524,35 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
 }
 
-.session-request {
-  position: absolute;
-  top: 0;
-  left: 0;
+.request {
+  position: relative;
   width: 100%;
   height: 100%;
-  background-color: white;
-
-  padding: 0.75rem 1rem;
-
-  @media (min-width: $sm-breakpoint) {
-    padding: 1rem 2rem;
-  }
+  display: flex;
+  flex-direction: column;
 
   &__body {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
   }
 
   &__icon {
-    width: 6rem;
-    height: 6rem;
+    width: 5rem;
+    height: 5rem;
+    @media (min-width: $sm-breakpoint) {
+      width: 6rem;
+      height: 6rem;
+    }
     border-radius: 0.25rem;
+    margin-bottom: 1rem;
+  }
+
+  &__title {
+    margin-bottom: 0.5rem;
   }
 
   .section {
@@ -512,70 +560,17 @@ body {
   }
 
   &__footer {
+    flex-shrink: 0;
     display: flex;
-    margin-bottom: 2rem;
-  }
-
-  &__btn {
-    padding: 0.5rem 1rem;
-
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
-    width: 100%;
-    cursor: pointer;
-
-    &:first-of-type {
-      border: 1px solid #eeeeee;
-      background-color: white;
-      &:hover {
-        background-color: #f3f4f6;
-      }
-      margin-right: 0.5rem;
-    }
-
-    &:last-of-type {
-      border: 1px solid #eeeeee;
-      background-color: #f3f4f6;
-      &:hover {
-        background-color: #e5e7eb;
-      }
-    }
-  }
-}
-
-.call-request {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: white;
-
-  padding: 0.75rem 1rem;
-
-  @media (min-width: $sm-breakpoint) {
-    padding: 1rem 2rem;
-  }
-
-  &__body {
-    display: flex;
-    flex-direction: column;
-  }
-
-  &__icon {
-    width: 6rem;
-    height: 6rem;
-    border-radius: 0.25rem;
-  }
-
-  .section {
-    margin-top: 1rem;
-  }
-
-  &__footer {
-    display: flex;
-    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 1) 100%
+    );
   }
 
   &__btn {
@@ -609,5 +604,134 @@ body {
     background-color: #f3f4f6;
     border-radius: 0.25rem;
     padding: 1rem;
+  }
+}
+
+.dropdownMenu__content {
+  min-width: 220px;
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+  box-shadow: 0px 10px 38px -10px rgba(22, 23, 24, 0.35),
+    0px 10px 20px -15px rgba(22, 23, 24, 0.2);
+  animation-duration: 400ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+
+  &:first-of-type {
+    margin-right: 0.5rem;
+  }
+
+  &[data-side='top'] {
+    animation-name: slideDownAndFade;
+  }
+
+  &[data-side='right'] {
+    animation-name: slideDownAndFade;
+  }
+
+  &[data-side='bottom'] {
+    animation-name: slideUpAndFade;
+  }
+
+  &[data-side='left'] {
+    animation-name: slideDownAndFade;
+  }
+}
+
+.dropdownMenu__item,
+.dropdownMenu__radio-item {
+  font-size: 0.875rem;
+  line-height: 1;
+  color: var(--violet11);
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  height: 1.5rem;
+  padding: 0 0.25rem;
+  position: relative;
+  padding-left: 1.5rem;
+  user-select: none;
+  outline: none;
+}
+
+.dropdownMenu__item[data-disabled],
+.dropdownMenu__radio-item[data-disabled] {
+  color: var(--blue8);
+  pointer-events: none;
+}
+.dropdownMenu__item[data-highlighted],
+.dropdownMenu__radio-item[data-highlighted] {
+  background-color: var(--blue9);
+  color: var(--blue1);
+}
+
+.dropdownMenu__label {
+  padding-left: 1.5rem;
+  font-size: 0.75rem;
+  line-height: 1.5rem;
+  color: gray;
+}
+
+.dropdownMenu__separator {
+  height: 1px;
+  background-color: #eeeeee;
+  margin: 0.5rem;
+}
+
+.dropdownMenu__itemIndicator {
+  position: absolute;
+  left: 0;
+  width: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdownMenu__arrow {
+  fill: white;
+}
+
+@keyframes slideUpAndFade {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideRightAndFade {
+  from {
+    opacity: 0;
+    transform: translateX(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideDownAndFade {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideLeftAndFade {
+  from {
+    opacity: 0;
+    transform: translateX(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }

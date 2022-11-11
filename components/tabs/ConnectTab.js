@@ -16,7 +16,7 @@ export default function ConnectTab({ wcConnector, wcConnect, wcDisconnect }) {
 
   return (
     <div className="tab">
-      <h2 className="tab__title">Connected dapps</h2>
+      <h2 className="tab__title">Connected dapp</h2>
       {wcConnector?.connected ? (
         <SessionCard wcConnector={wcConnector} wcDisconnect={wcDisconnect} />
       ) : (

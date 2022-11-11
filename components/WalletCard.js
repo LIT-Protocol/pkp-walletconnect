@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { truncate } from '../utils/helpers';
 
 export default function WalletCard({ currentPKP }) {
+  const [copied, setCopied] = useState(false);
+
   const handleCopy = (event, value) => {
     event.preventDefault();
     navigator.clipboard.writeText(value);
+    setCopied(true);
   };
 
   return (
@@ -15,8 +19,11 @@ export default function WalletCard({ currentPKP }) {
         </h1>
         {currentPKP?.ethAddress && (
           <button
-            className="wallet-card__copy-btn"
-            onClick={e => handleCopy(e, currentPKP.ethAddress)}
+            className="copy-btn"
+            onClick={e => {
+              setCopied(false);
+              handleCopy(e, currentPKP.ethAddress);
+            }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -24,7 +31,7 @@ export default function WalletCard({ currentPKP }) {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="wallet-card__copy-btn__icon"
+              className="copy-btn__icon"
             >
               <path
                 strokeLinecap="round"

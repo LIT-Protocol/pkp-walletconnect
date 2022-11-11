@@ -1,14 +1,9 @@
-import {
-  getMessageToSign,
-  getPersonalMessageToSign,
-  getTypedDataToSign,
-  getTransactionToSign,
-  getTransactionToSend,
-} from '../utils/helpers';
+import { getTransactionToSign, getTransactionToSend } from '../utils/helpers';
 import { CodeBlock, codepen } from 'react-code-blocks';
 
 export default function CallRequest({
   currentPKP,
+  chainId,
   wcPeerMeta,
   wcRequest,
   wcApproveRequest,
@@ -17,7 +12,7 @@ export default function CallRequest({
   let title;
   let description;
 
-  switch (wcRequest.payload.method) {
+  switch (wcRequest.method) {
     case 'eth_sign':
     case 'personal_sign':
       title = 'Sign message';
@@ -47,86 +42,88 @@ export default function CallRequest({
       break;
     default:
       title = 'Unknown request';
-      description = `Unable to handle this unknown request: ${wcRequest.payload.method}.`;
+      description = `Unable to handle this unknown request: ${wcRequest.method}.`;
   }
 
   return (
-    <div className="call-request">
-      <div className="call-request__body">
-        {wcPeerMeta?.icons.length > 0 && (
-          <img
-            className="call-request__icon"
-            src={wcPeerMeta.icons[0]}
-            alt={wcPeerMeta?.name ? wcPeerMeta.name : 'unknown app'}
-          />
-        )}
-        <h2>{title}</h2>
-        <p>{description}</p>
-        <div className="section">
-          {wcRequest.payload.method === 'eth_sign' && (
-            <p className="call-request__message">
-              {getMessageToSign(wcRequest.payload.params[1])}
-            </p>
-          )}
-          {wcRequest.payload.method === 'personal_sign' && (
-            <p className="call-request__message">
-              {getPersonalMessageToSign(wcRequest.payload.params[0])}
-            </p>
-          )}
-          {wcRequest.payload.method === 'eth_signTypedData' && (
-            <p className="call-request__message">
-              {getTypedDataToSign(wcRequest.payload.params[1])}
-            </p>
-          )}
-          {wcRequest.payload.method === 'eth_signTransaction' && (
-            <CodeBlock
-              showLineNumbers={false}
-              text={JSON.stringify(
-                getTransactionToSign(wcRequest.payload.params[0]),
-                null,
-                2
-              )}
-              theme={codepen}
-              language="json"
+    <main className="container">
+      <div className="request">
+        <div className="request__body">
+          {wcPeerMeta?.icons.length > 0 && (
+            <img
+              className="request__icon"
+              src={wcPeerMeta.icons[0]}
+              alt={wcPeerMeta?.name ? wcPeerMeta.name : 'unknown app'}
             />
           )}
-          {wcRequest.payload.method === 'eth_sendTransaction' && (
-            <CodeBlock
-              showLineNumbers={false}
-              text={JSON.stringify(
-                getTransactionToSend(wcRequest.payload.params[0]),
-                null,
-                2
-              )}
-              theme={codepen}
-              language="json"
-            />
-          )}
+          <h2>{title}</h2>
+          <p>{description}</p>
+          <div className="section">
+            {wcRequest.method === 'eth_sign' && (
+              <p className="request__message">{wcRequest.params[1]}</p>
+            )}
+            {wcRequest.method === 'personal_sign' && (
+              <p className="request__message">{wcRequest.params[0]}</p>
+            )}
+            {wcRequest.method === 'eth_signTypedData' && (
+              // <p className="request__message">{wcRequest.params[1]}</p>
+              <CodeBlock
+                showLineNumbers={false}
+                text={JSON.stringify(JSON.parse(wcRequest.params[1]), null, 2)}
+                theme={codepen}
+                language="json"
+              />
+            )}
+            {wcRequest.method === 'eth_signTransaction' && (
+              <CodeBlock
+                showLineNumbers={false}
+                text={JSON.stringify(
+                  getTransactionToSign(wcRequest.params[0]),
+                  null,
+                  2
+                )}
+                theme={codepen}
+                language="json"
+              />
+            )}
+            {wcRequest.method === 'eth_sendTransaction' && (
+              <CodeBlock
+                showLineNumbers={false}
+                text={JSON.stringify(
+                  getTransactionToSend(wcRequest.params[0], chainId),
+                  null,
+                  2
+                )}
+                theme={codepen}
+                language="json"
+              />
+            )}
+          </div>
+        </div>
+        <div className="request__footer">
+          <button
+            className="request__btn"
+            onClick={() =>
+              wcRejectRequest({
+                payload: wcRequest,
+              })
+            }
+          >
+            Reject
+          </button>
+          <button
+            className="request__btn"
+            onClick={() =>
+              wcApproveRequest({
+                payload: wcRequest,
+                currentPKP: currentPKP,
+              })
+            }
+          >
+            Approve
+          </button>
         </div>
       </div>
-      <div className="call-request__footer">
-        <button
-          className="call-request__btn"
-          onClick={() =>
-            wcRejectRequest({
-              payload: wcRequest.payload,
-            })
-          }
-        >
-          Reject
-        </button>
-        <button
-          className="call-request__btn"
-          onClick={() =>
-            wcApproveRequest({
-              payload: wcRequest.payload,
-              currentPKP: currentPKP,
-            })
-          }
-        >
-          Approve
-        </button>
-      </div>
-    </div>
+    </main>
   );
 }

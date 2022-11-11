@@ -1,19 +1,15 @@
 import Head from 'next/head';
-import { useState, useEffect } from 'react';
-import { useAccount, useSigner } from 'wagmi';
-import { ethers } from 'ethers';
+import { useState, useEffect, useCallback } from 'react';
+import { useAccount, useSigner, useDisconnect } from 'wagmi';
 import useHasMounted from '../hooks/useHasMounted';
 import useWalletConnect from '../hooks/useWalletConnect';
 import {
   litContractsConnected,
   connectLitContracts,
-  getPKPNFTTokenIdsByAddress,
-  getPubkey,
+  fetchPKPsByAddress,
 } from '../utils/lit-contracts';
-import { WC_URI_KEY } from '../utils/constants';
+import { DEFAULT_CHAIN_ID, WC_STORAGE_KEY } from '../utils/constants';
 import ConnectWallet from '../components/ConnectWallet';
-import Layout from '../components/Layout';
-import Footer from '../components/Footer';
 import Loading from '../components/Loading';
 import HomeTab from '../components/tabs/HomeTab';
 import ConnectTab from '../components/tabs/ConnectTab';
@@ -21,30 +17,15 @@ import ActivityTab from '../components/tabs/ActivityTab';
 import MintPKP from '../components/MintPKP';
 import SessionRequest from '../components/SessionRequest';
 import CallRequest from '../components/CallRequest';
-
-const fetchPKPsByAddress = async address => {
-  const tokenIds = await getPKPNFTTokenIdsByAddress(address);
-  let pkps = [];
-
-  if (tokenIds.length > 0) {
-    for (let i = 0; i < tokenIds.length; i++) {
-      const pubkey = await getPubkey(tokenIds[i]);
-      console.log(`pubkey index ${i}`, pubkey);
-      const ethAddress = ethers.utils.computeAddress(pubkey);
-      pkps.push({
-        tokenId: tokenIds[i],
-        pubkey: pubkey,
-        ethAddress: ethAddress,
-      });
-    }
-  }
-
-  return pkps;
-};
+import InfoTab from '../components/tabs/InfoTab';
+import Layout from '../components/Layout';
+import Footer from '../components/footer';
+import Header from '../components/header';
 
 export default function Home() {
   const [currentPKP, setCurrentPKP] = useState(null);
   const [myPKPs, setMyPKPs] = useState([]);
+  const [chainId, setChainId] = useState(DEFAULT_CHAIN_ID);
 
   const [fetching, setFetching] = useState(false);
   const [tab, setTab] = useState(1);
@@ -53,20 +34,53 @@ export default function Home() {
   // wagmi hooks
   const { address, isConnected } = useAccount();
   const { data: signer } = useSigner();
+  const { disconnect } = useDisconnect();
 
   // WalletConnect hook
   const {
-    wcStatus,
     wcConnector,
-    wcPendingRequest,
+    wcSessionRequest,
     wcRequests,
+    wcResults,
     wcConnect,
     wcDisconnect,
     wcApproveSession,
     wcRejectSession,
+    wcUpdateSession,
     wcApproveRequest,
     wcRejectRequest,
   } = useWalletConnect();
+
+  const handleSwitchPKP = useCallback(
+    newPKPEthAddress => {
+      console.log('handleSwitchPKP', newPKPEthAddress);
+      let newPKP = myPKPs.find(pkp => pkp.ethAddress === newPKPEthAddress);
+      wcUpdateSession({ currentPKP: newPKP, chainId });
+      setCurrentPKP(newPKP);
+    },
+    [myPKPs, chainId, wcUpdateSession]
+  );
+
+  const handleSwitchChain = useCallback(
+    newChainId => {
+      console.log('handleSwitchChain', newChainId);
+      wcUpdateSession({ currentPKP, chainId: Number(newChainId) });
+      setChainId(newChainId);
+    },
+    [currentPKP, wcUpdateSession]
+  );
+
+  const handleLogout = useCallback(
+    event => {
+      event.preventDefault();
+      wcDisconnect();
+      setCurrentPKP(null);
+      setMyPKPs([]);
+      setChainId(DEFAULT_CHAIN_ID);
+      disconnect();
+    },
+    [disconnect, wcDisconnect]
+  );
 
   useEffect(() => {
     async function fetchMyPKPs() {
@@ -107,14 +121,35 @@ export default function Home() {
   useEffect(() => {
     // Check if cloud wallet exists but WalletConnect is not connected
     if (currentPKP && !wcConnector) {
-      const wcSession = localStorage.getItem(WC_URI_KEY);
+      const wcSession = localStorage.getItem(WC_STORAGE_KEY);
 
       // Reconnect if URI exists in local storage
       if (wcSession) {
-        wcConnect({ session: JSON.parse(wcSession) });
+        const session = JSON.parse(wcSession);
+
+        if (chainId !== session.chainId) {
+          setChainId(session.chainId);
+        }
+
+        // Check if current PKP is the same as the one in the session
+        if (currentPKP.ethAddress === session.accounts[0]) {
+          wcConnect({ session: session });
+        } else {
+          // Update current PKP to the one in the session if user owns that PKP
+          const pkp = myPKPs.find(
+            pkp => pkp.ethAddress === session.accounts[0]
+          );
+          if (pkp) {
+            wcConnect({ session: session });
+            setCurrentPKP(pkp);
+          } else {
+            // If user does not own the PKP in the session, disconnect
+            wcDisconnect();
+          }
+        }
       }
     }
-  }, [currentPKP, wcConnector, wcConnect]);
+  }, [currentPKP, myPKPs, chainId, wcConnector, wcConnect, wcDisconnect]);
 
   if (!hasMounted) {
     return null;
@@ -127,12 +162,16 @@ export default function Home() {
           <title>Lit PKP WalletConnect</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
-        <main className="container">
-          <ConnectWallet />
-        </main>
-        <footer className="footer">
-          <span className="footer__caption">Powered by Lit</span>
-        </footer>
+        <Header
+          currentPKP={currentPKP}
+          myPKPs={myPKPs}
+          chainId={chainId}
+          handleSwitchChain={handleSwitchChain}
+          handleSwitchPKP={handleSwitchPKP}
+          handleLogout={handleLogout}
+        />
+        <ConnectWallet />
+        <Footer tab={tab} setTab={setTab} />
       </Layout>
     );
   }
@@ -144,12 +183,16 @@ export default function Home() {
           <title>Lit PKP WalletConnect</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
-        <main className="container">
-          <Loading />
-        </main>
-        <footer className="footer">
-          <span className="footer__caption">Powered by Lit</span>
-        </footer>
+        <Header
+          currentPKP={currentPKP}
+          myPKPs={myPKPs}
+          chainId={chainId}
+          handleSwitchChain={handleSwitchChain}
+          handleSwitchPKP={handleSwitchPKP}
+          handleLogout={handleLogout}
+        />
+        <Loading />
+        <Footer tab={tab} setTab={setTab} />
       </Layout>
     );
   }
@@ -161,12 +204,16 @@ export default function Home() {
           <title>Lit PKP WalletConnect</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
-        <main className="container">
-          <MintPKP />
-        </main>
-        <footer className="footer">
-          <span className="footer__caption">Powered by Lit</span>
-        </footer>
+        <Header
+          currentPKP={currentPKP}
+          myPKPs={myPKPs}
+          chainId={chainId}
+          handleSwitchChain={handleSwitchChain}
+          handleSwitchPKP={handleSwitchPKP}
+          handleLogout={handleLogout}
+        />
+        <MintPKP />
+        <Footer tab={tab} setTab={setTab} />
       </Layout>
     );
   }
@@ -178,47 +225,57 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <>
-        <main className="container">
-          {tab === 1 && (
-            <HomeTab
-              currentPKP={currentPKP}
-              wcConnector={wcConnector}
-              // wcPendingRequest={wcPendingRequest}
-              wcRequests={wcRequests}
-              wcDisconnect={wcDisconnect}
-            />
-          )}
-          {tab === 2 && (
-            <ConnectTab
-              wcConnector={wcConnector}
-              wcConnect={wcConnect}
-              wcDisconnect={wcDisconnect}
-            />
-          )}
-          {tab === 3 && <ActivityTab wcRequests={wcRequests} />}
+      {wcSessionRequest ? (
+        <SessionRequest
+          currentPKP={currentPKP}
+          chainId={chainId}
+          wcSessionRequest={wcSessionRequest}
+          wcApproveSession={wcApproveSession}
+          wcRejectSession={wcRejectSession}
+        />
+      ) : wcRequests.length > 0 ? (
+        <CallRequest
+          currentPKP={currentPKP}
+          chainId={chainId}
+          wcPeerMeta={wcConnector.peerMeta}
+          wcRequest={wcRequests[0]}
+          wcApproveRequest={wcApproveRequest}
+          wcRejectRequest={wcRejectRequest}
+        />
+      ) : (
+        <>
+          <Header
+            currentPKP={currentPKP}
+            myPKPs={myPKPs}
+            chainId={chainId}
+            handleSwitchChain={handleSwitchChain}
+            handleSwitchPKP={handleSwitchPKP}
+            handleLogout={handleLogout}
+          />
 
-          {wcStatus === 'session_request' && (
-            <SessionRequest
-              currentPKP={currentPKP}
-              wcPeerMeta={wcConnector.peerMeta}
-              wcApproveSession={wcApproveSession}
-              wcRejectSession={wcRejectSession}
-            />
-          )}
+          <main className="container">
+            {tab === 1 && (
+              <HomeTab
+                currentPKP={currentPKP}
+                wcConnector={wcConnector}
+                wcResults={wcResults}
+                wcDisconnect={wcDisconnect}
+              />
+            )}
+            {tab === 2 && (
+              <ConnectTab
+                wcConnector={wcConnector}
+                wcConnect={wcConnect}
+                wcDisconnect={wcDisconnect}
+              />
+            )}
+            {tab === 3 && <ActivityTab wcResults={wcResults} />}
+            {tab === 4 && <InfoTab currentPKP={currentPKP} />}
+          </main>
 
-          {wcStatus === 'call_request' && (
-            <CallRequest
-              currentPKP={currentPKP}
-              wcPeerMeta={wcConnector.peerMeta}
-              wcRequest={wcRequests[wcPendingRequest]}
-              wcApproveRequest={wcApproveRequest}
-              wcRejectRequest={wcRejectRequest}
-            />
-          )}
-        </main>
-        <Footer tab={tab} setTab={setTab} />
-      </>
+          <Footer tab={tab} setTab={setTab} />
+        </>
+      )}
     </Layout>
   );
 }

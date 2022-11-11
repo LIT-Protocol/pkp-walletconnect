@@ -1,7 +1,6 @@
-import { useCallback } from 'react';
-import { useAccount, useDisconnect } from 'wagmi';
-import { truncate } from '../utils/helpers';
-import useWalletConnect from '../hooks/useWalletConnect';
+import { useAccount } from 'wagmi';
+import AccountMenu from './AccountMenu';
+import NetworkMenu from './NetworkMenu';
 
 const icon = (
   <svg
@@ -18,29 +17,32 @@ const icon = (
   </svg>
 );
 
-export default function Header() {
+export default function Header({
+  currentPKP,
+  myPKPs,
+  chainId,
+  handleSwitchChain,
+  handleSwitchPKP,
+  handleLogout,
+}) {
   const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
-  const { wcDisconnect } = useWalletConnect();
-
-  const handleDisconnect = useCallback(
-    event => {
-      event.preventDefault();
-      disconnect();
-      wcDisconnect();
-    },
-    [disconnect, wcDisconnect]
-  );
 
   if (isConnected) {
     return (
       <header className="header">
         {icon}
         <div className="header__row">
-          <button className="header__btn" onClick={handleDisconnect}>
-            <span className="header__btn__status"></span>
-            {truncate(address)}
-          </button>
+          <NetworkMenu
+            chainId={chainId}
+            handleSwitchChain={handleSwitchChain}
+          />
+          <AccountMenu
+            address={address}
+            currentPKP={currentPKP}
+            myPKPs={myPKPs}
+            handleSwitchPKP={handleSwitchPKP}
+            handleLogout={handleLogout}
+          />
         </div>
       </header>
     );

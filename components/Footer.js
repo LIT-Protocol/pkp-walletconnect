@@ -1,4 +1,16 @@
+import { useAccount } from 'wagmi';
+
 export default function Footer({ tab, setTab }) {
+  const { isConnected } = useAccount();
+
+  if (!isConnected) {
+    return (
+      <footer className="footer">
+        <span className="footer__caption">Powered by Lit</span>
+      </footer>
+    );
+  }
+
   return (
     <footer className="footer">
       <div className="footer__links">
@@ -79,6 +91,32 @@ export default function Footer({ tab, setTab }) {
           </svg>
 
           <span className="sr-only">Activity</span>
+        </button>
+        <button
+          onClick={e => {
+            e.preventDefault();
+            setTab(4);
+          }}
+          className={
+            tab === 4 ? 'footer__link footer__link--active' : 'footer__link'
+          }
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="footer__link__icon"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+            />
+          </svg>
+
+          <span className="sr-only">Details</span>
         </button>
       </div>
     </footer>

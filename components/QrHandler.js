@@ -1,20 +1,20 @@
-import { Fragment, useState, useCallback, useEffect } from 'react';
+import { Fragment, useState, useCallback } from 'react';
 import { QrReader } from 'react-qr-reader';
 
 export default function QrHandler({ wcConnect }) {
   const [show, setShow] = useState(false);
-  const [uri, setUri] = useState('');
 
   function onShowScanner() {
     setShow(true);
   }
 
-  useEffect(() => {
-    if (uri) {
+  const handleQrPaste = useCallback(
+    uri => {
       wcConnect({ uri: uri });
-      setUri('');
-    }
-  }, [uri, wcConnect]);
+      setShow(false);
+    },
+    [wcConnect]
+  );
 
   return (
     <div className="qr-reader">
@@ -25,7 +25,7 @@ export default function QrHandler({ wcConnect }) {
               style={{ width: '100%' }}
               onResult={(result, error) => {
                 if (!!result) {
-                  setUri(result?.text);
+                  handleQrPaste(result?.text);
                 }
               }}
             />

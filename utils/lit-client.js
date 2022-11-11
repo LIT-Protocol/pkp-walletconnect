@@ -9,7 +9,18 @@ import {
 } from '@ethersproject/bytes';
 import { recoverPublicKey, computePublicKey } from '@ethersproject/signing-key';
 import { verifyMessage } from '@ethersproject/wallet';
-import { providers } from 'ethers';
+import {
+  SignTypedDataVersion,
+  TypedDataUtils,
+  recoverPersonalSignature,
+  recoverTypedSignature,
+} from '@metamask/eth-sig-util';
+import {
+  getMessageToSign,
+  getPersonalMessageToSign,
+  hashMessage,
+  hashTypedDataMessage,
+} from './helpers';
 
 const PERSONAL_SIGN_CODE = `
   const go = async () => {
@@ -49,11 +60,13 @@ export async function signPersonalMessage(message, publicKey) {
     chain: 'mumbai',
   });
 
+  const toSign = getPersonalMessageToSign(message);
+
   const response = await litNodeClient.executeJs({
     code: PERSONAL_SIGN_CODE,
     authSig,
     jsParams: {
-      message: message,
+      message: toSign,
       publicKey: publicKey,
       sigName: 'sig1',
     },
@@ -83,6 +96,11 @@ export async function signPersonalMessage(message, publicKey) {
   const recoveredAddressViaMessage = verifyMessage(message, encodedSig);
   console.log('recoveredAddressViaMessage', recoveredAddressViaMessage);
 
+  console.log(
+    'recoverPersonalSignature',
+    recoverPersonalSignature({ data: toSign, signature: encodedSig })
+  );
+
   return encodedSig;
 }
 
@@ -95,15 +113,18 @@ export async function signMessage(message, publicKey) {
     chain: 'mumbai',
   });
 
+  const toSign = getMessageToSign(message);
+
   const response = await litNodeClient.executeJs({
     code: SIGN_CODE,
     authSig,
     jsParams: {
-      toSign: message,
+      toSign: toSign,
       publicKey: publicKey,
       sigName: 'sig1',
     },
   });
+  console.log('response', response);
   const signatures = response.signatures;
   // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
@@ -125,6 +146,70 @@ export async function signMessage(message, publicKey) {
   console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
   const recoveredAddress = recoverAddress(dataSigned, encodedSig);
   console.log('recoveredAddress', recoveredAddress);
+
+  const hash = ethers.utils.hashMessage(message);
+  const recoveredAddressViaMessage = verifyMessage(hash, encodedSig);
+  console.log('recoveredAddressViaMessage', recoveredAddressViaMessage);
+
+  return encodedSig;
+}
+
+export async function signTypedData(data, version, publicKey) {
+  const { types, domain, primaryType, message } = JSON.parse(data);
+  delete types.EIP712Domain;
+  const typedData = { types, primaryType, domain, message };
+  const versionEnum =
+    version === 'V3' ? SignTypedDataVersion.V3 : SignTypedDataVersion.V4;
+  const hash = TypedDataUtils.eip712Hash(typedData, versionEnum);
+
+  if (!litNodeClient) {
+    await initLitNodeClient();
+  }
+
+  const authSig = await LitJsSdk.checkAndSignAuthMessage({
+    chain: 'mumbai',
+  });
+
+  const response = await litNodeClient.executeJs({
+    code: SIGN_CODE,
+    authSig,
+    jsParams: {
+      toSign: hash,
+      publicKey: publicKey,
+      sigName: 'sig1',
+    },
+  });
+  console.log('response', response);
+  const signatures = response.signatures;
+  // console.log('signatures: ', signatures);
+  const sig = signatures.sig1;
+  const dataSigned = sig.dataSigned;
+  const encodedSig = joinSignature({
+    r: '0x' + sig.r,
+    s: '0x' + sig.s,
+    v: sig.recid,
+  });
+  console.log('encodedSig', encodedSig);
+  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
+  console.log('dataSigned', dataSigned);
+  const splitSig = splitSignature(encodedSig);
+  console.log('splitSig', splitSig);
+
+  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
+  console.log('uncompressed recoveredPubkey', recoveredPubkey);
+  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
+  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
+  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
+  console.log('recoveredAddress', recoveredAddress);
+
+  console.log(
+    'recoverTypedSignature',
+    recoverTypedSignature({
+      data: typedData,
+      signature: encodedSig,
+      version: SignTypedDataVersion.V4,
+    })
+  );
 
   return encodedSig;
 }
@@ -201,7 +286,7 @@ export async function sendTransaction(transaction, publicKey, rpcUrl) {
   const sentTxn = await provider.sendTransaction(signedTxn);
   console.log('sentTxn', sentTxn);
 
-  return sentTxn.hash;
+  return sentTxn;
 }
 
 export function getLitNodeClient() {
