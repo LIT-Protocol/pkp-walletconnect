@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import { hexToDecimal } from './helpers';
-import PKPNFTABI from './abis/PKPNFT.json';
-import PubkeyRouterABI from './abis/PubkeyRouter.json';
+import PKPNFT from './abis/PKPNFT.json';
+import PubkeyRouter from './abis/PubkeyRouter.json';
 
 let pkpContract = null;
 let routerContract = null;
@@ -19,7 +19,7 @@ const getContract = (signer, contractAddress, contractABI) => {
 // Connect to PKPNFT contract
 const connectPKPContract = signer => {
   const contractAddress = process.env.NEXT_PUBLIC_PKPNFT_CONTRACT_ADDRESS;
-  const pkpContract = getContract(signer, contractAddress, PKPNFTABI);
+  const pkpContract = getContract(signer, contractAddress, PKPNFT.abi);
   return pkpContract;
 };
 
@@ -27,7 +27,7 @@ const connectPKPContract = signer => {
 const connectRouterContract = signer => {
   const contractAddress =
     process.env.NEXT_PUBLIC_PUBKEY_ROUTER_CONTRACT_ADDRESS;
-  const routerContract = getContract(signer, contractAddress, PubkeyRouterABI);
+  const routerContract = getContract(signer, contractAddress, PubkeyRouter.abi);
   return routerContract;
 };
 
@@ -83,4 +83,25 @@ export const getPKPNFTTokenIdsByAddress = async address => {
   }
 
   return tokens;
+};
+
+// Fetch PKPs by address
+export const fetchPKPsByAddress = async address => {
+  const tokenIds = await getPKPNFTTokenIdsByAddress(address);
+  let pkps = [];
+
+  if (tokenIds.length > 0) {
+    for (let i = 0; i < tokenIds.length; i++) {
+      const pubkey = await getPubkey(tokenIds[i]);
+      console.log(`pubkey index ${i}`, pubkey);
+      const ethAddress = ethers.utils.computeAddress(pubkey);
+      pkps.push({
+        tokenId: tokenIds[i],
+        pubkey: pubkey,
+        ethAddress: ethAddress,
+      });
+    }
+  }
+
+  return pkps;
 };
