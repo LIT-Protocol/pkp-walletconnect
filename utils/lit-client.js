@@ -16,11 +16,13 @@ import {
   recoverTypedSignature,
 } from '@metamask/eth-sig-util';
 import {
+  convertHexToUtf8,
   getMessageToSign,
   getPersonalMessageToSign,
   hashMessage,
   hashTypedDataMessage,
 } from './helpers';
+import * as ethUtil from 'ethereumjs-util';
 
 const PERSONAL_SIGN_CODE = `
   const go = async () => {
@@ -60,13 +62,14 @@ export async function signPersonalMessage(message, publicKey) {
     chain: 'mumbai',
   });
 
-  const toSign = getPersonalMessageToSign(message);
-
+  // Sign message string with ethPersonalSignMessageEcdsa
+  // https://actions-docs.litprotocol.com/#ethpersonalsignmessageecdsa
+  const messageStr = convertHexToUtf8(message);
   const response = await litNodeClient.executeJs({
     code: PERSONAL_SIGN_CODE,
     authSig,
     jsParams: {
-      message: toSign,
+      message: messageStr,
       publicKey: publicKey,
       sigName: 'sig1',
     },
@@ -93,12 +96,16 @@ export async function signPersonalMessage(message, publicKey) {
   const recoveredAddress = recoverAddress(dataSigned, encodedSig);
   console.log('recoveredAddress', recoveredAddress);
 
-  const recoveredAddressViaMessage = verifyMessage(message, encodedSig);
+  // verifyMessage hashes the message for you
+  // https://docs.ethers.io/v5/api/utils/signing-key/#utils-verifyMessage
+  const recoveredAddressViaMessage = verifyMessage(messageStr, encodedSig);
   console.log('recoveredAddressViaMessage', recoveredAddressViaMessage);
 
+  // options.data - The hex data that was signed.
+  // https://github.com/MetaMask/eth-sig-util/blob/9f01c9d7922b717ddda3aa894c38fbba623e8bdf/src/personal-sign.ts#L53
   console.log(
     'recoverPersonalSignature',
-    recoverPersonalSignature({ data: toSign, signature: encodedSig })
+    recoverPersonalSignature({ data: message, signature: encodedSig })
   );
 
   return encodedSig;
@@ -113,7 +120,7 @@ export async function signMessage(message, publicKey) {
     chain: 'mumbai',
   });
 
-  const toSign = getMessageToSign(message);
+  const toSign = ethers.utils.arrayify(ethers.utils.hashMessage(message));
 
   const response = await litNodeClient.executeJs({
     code: SIGN_CODE,
@@ -147,9 +154,22 @@ export async function signMessage(message, publicKey) {
   const recoveredAddress = recoverAddress(dataSigned, encodedSig);
   console.log('recoveredAddress', recoveredAddress);
 
-  const hash = ethers.utils.hashMessage(message);
-  const recoveredAddressViaMessage = verifyMessage(hash, encodedSig);
+  // verifyMessage hashes the message for you
+  // https://docs.ethers.io/v5/api/utils/signing-key/#utils-verifyMessage
+  const recoveredAddressViaMessage = verifyMessage(message, encodedSig);
   console.log('recoveredAddressViaMessage', recoveredAddressViaMessage);
+
+  const testparams = ethUtil.fromRpcSig(encodedSig);
+  console.log('ethUtil testparams', testparams);
+  const testresult = ethUtil.ecrecover(
+    ethUtil.toBuffer(ethers.utils.hashMessage(message)),
+    testparams.v,
+    testparams.r,
+    testparams.s
+  );
+  console.log('ethUtil testresult', testresult);
+  const testsigner = ethUtil.bufferToHex(ethUtil.publicToAddress(testresult));
+  console.log('ethUtil testsigner', testsigner);
 
   return encodedSig;
 }
@@ -170,6 +190,8 @@ export async function signTypedData(data, version, publicKey) {
     chain: 'mumbai',
   });
 
+  // Sign data with signEcdsa
+  // https://actions-docs.litprotocol.com/#signecdsa
   const response = await litNodeClient.executeJs({
     code: SIGN_CODE,
     authSig,
@@ -202,12 +224,14 @@ export async function signTypedData(data, version, publicKey) {
   const recoveredAddress = recoverAddress(dataSigned, encodedSig);
   console.log('recoveredAddress', recoveredAddress);
 
+  // data: typed data
+  // https://metamask.github.io/eth-sig-util/latest/modules.html#recoverTypedSignature
   console.log(
     'recoverTypedSignature',
     recoverTypedSignature({
       data: typedData,
       signature: encodedSig,
-      version: SignTypedDataVersion.V4,
+      version: versionEnum,
     })
   );
 
