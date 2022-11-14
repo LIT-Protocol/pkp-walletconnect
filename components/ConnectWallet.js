@@ -1,13 +1,18 @@
 import { useConnect } from 'wagmi';
+import { getAuthSig } from '../utils/lit-client';
 
 export default function ConnectWallet() {
   const { connect, connectors, error, isLoading, pendingConnector } =
-    useConnect();
+    useConnect({
+      async onSuccess() {
+        await getAuthSig();
+      },
+    });
 
   return (
     <main className="container">
       <div className="vertical-stack">
-        {error && <p>{error.message}</p>}
+        {error && <p className="alert alert--error">{error.message}</p>}
         <h1>Connect wallet</h1>
         {connectors.map(connector => (
           <button

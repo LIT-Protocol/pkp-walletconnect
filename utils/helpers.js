@@ -121,8 +121,22 @@ export function getSignVersionByMessageFormat(data) {
   }
 }
 
+export const isPayloadSupported = payload => {
+  const supportedMethods = [
+    'eth_sign',
+    'personal_sign',
+    'eth_signTypedData',
+    'eth_signTypedData_v1',
+    'eth_signTypedData_v3',
+    'eth_signTypedData_v4',
+    'eth_signTransaction',
+    'eth_sendTransaction',
+  ];
+  return supportedMethods.includes(payload.method);
+};
+
 export const getPayloadName = payload => {
-  let name = 'Unknown';
+  let name;
 
   switch (payload.method) {
     case 'eth_sign':
@@ -130,6 +144,9 @@ export const getPayloadName = payload => {
       name = 'Sign message';
       break;
     case 'eth_signTypedData':
+    case 'eth_signTypedData_v1':
+    case 'eth_signTypedData_v3':
+    case 'eth_signTypedData_v4':
       name = 'Sign typed data';
       break;
     case 'eth_signTransaction':
@@ -139,6 +156,7 @@ export const getPayloadName = payload => {
       name = 'Send transaction';
       break;
     default:
+      name = `${payload.method} (unsupported)`;
       break;
   }
 

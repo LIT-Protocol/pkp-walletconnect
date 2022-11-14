@@ -71,11 +71,6 @@ export async function signPersonalMessage(message, publicKey) {
     v: sig.recid,
   });
 
-  console.log(
-    'Sign personal message verified?',
-    verifySignPersonalMessage(message, encodedSig, publicKey)
-  );
-
   return encodedSig;
 }
 
@@ -126,11 +121,6 @@ export async function signMessage(message, publicKey) {
     s: '0x' + sig.s,
     v: sig.recid,
   });
-
-  console.log(
-    'Sign message verified?',
-    verifySignMessage(message, encodedSig, publicKey)
-  );
 
   return encodedSig;
 }
@@ -197,11 +187,6 @@ export async function signTypedData(data, version, publicKey) {
     s: '0x' + sig.s,
     v: sig.recid,
   });
-
-  console.log(
-    `Sign typed data ${version} verified?`,
-    verifySignTypedData(data, version, encodedSig, publicKey)
-  );
 
   return encodedSig;
 }
@@ -271,11 +256,6 @@ export async function signTransaction(transaction, publicKey) {
     sig.signature
   );
   console.log('signedTxn: ', signedTxn);
-
-  console.log(
-    'Sign transaction verified?',
-    verifySignTransaction(dataSigned, encodedSig, publicKey)
-  );
 
   return signedTxn;
 }

@@ -25,6 +25,8 @@ import InfoTab from '../components/tabs/InfoTab';
 import Layout from '../components/Layout';
 import Footer from '../components/Footer';
 import Header from '../components/Header';
+import NetworkMenu from '../components/NetworkMenu';
+import AccountMenu from '../components/AccountMenu';
 
 export default function Home() {
   const [currentPKP, setCurrentPKP] = useState(null);
@@ -189,14 +191,7 @@ export default function Home() {
           <title>Lit PKP WalletConnect</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
-        <Header
-          currentPKP={currentPKP}
-          myPKPs={myPKPs}
-          chainId={chainId}
-          handleSwitchChain={handleSwitchChain}
-          handleSwitchPKP={handleSwitchPKP}
-          handleLogout={handleLogout}
-        />
+        <Header />
         <ConnectWallet />
         <Footer tab={tab} setTab={setTab} />
       </Layout>
@@ -210,14 +205,7 @@ export default function Home() {
           <title>Lit PKP WalletConnect</title>
           <link rel="icon" href="/favicon.ico" />
         </Head>
-        <Header
-          currentPKP={currentPKP}
-          myPKPs={myPKPs}
-          chainId={chainId}
-          handleSwitchChain={handleSwitchChain}
-          handleSwitchPKP={handleSwitchPKP}
-          handleLogout={handleLogout}
-        />
+        <Header />
         <Loading />
         <Footer tab={tab} setTab={setTab} />
       </Layout>
@@ -232,12 +220,21 @@ export default function Home() {
           <link rel="icon" href="/favicon.ico" />
         </Head>
         <Header
-          currentPKP={currentPKP}
-          myPKPs={myPKPs}
-          chainId={chainId}
-          handleSwitchChain={handleSwitchChain}
-          handleSwitchPKP={handleSwitchPKP}
-          handleLogout={handleLogout}
+          networkMenu={
+            <NetworkMenu
+              chainId={chainId}
+              handleSwitchChain={handleSwitchChain}
+            />
+          }
+          accountMenu={
+            <AccountMenu
+              address={address}
+              currentPKP={currentPKP}
+              myPKPs={myPKPs}
+              handleSwitchPKP={handleSwitchPKP}
+              handleLogout={handleLogout}
+            />
+          }
         />
         <MintPKP />
         <Footer tab={tab} setTab={setTab} />
@@ -272,12 +269,21 @@ export default function Home() {
       ) : (
         <>
           <Header
-            currentPKP={currentPKP}
-            myPKPs={myPKPs}
-            chainId={chainId}
-            handleSwitchChain={handleSwitchChain}
-            handleSwitchPKP={handleSwitchPKP}
-            handleLogout={handleLogout}
+            networkMenu={
+              <NetworkMenu
+                chainId={chainId}
+                handleSwitchChain={handleSwitchChain}
+              />
+            }
+            accountMenu={
+              <AccountMenu
+                address={address}
+                currentPKP={currentPKP}
+                myPKPs={myPKPs}
+                handleSwitchPKP={handleSwitchPKP}
+                handleLogout={handleLogout}
+              />
+            }
           />
 
           <main className="container">

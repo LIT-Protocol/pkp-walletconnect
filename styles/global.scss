@@ -246,6 +246,19 @@ body {
     width: 1rem;
     height: 1rem;
   }
+
+  &__alert {
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    background-color: #ecfdf5;
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+.copy-btn-wrapper {
+  display: inline-flex;
+  align-items: center;
 }
 
 .connect-dapp {
@@ -607,6 +620,17 @@ body {
   }
 }
 
+.alert {
+  font-size: 0.875rem;
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+
+  &--error {
+    background-color: #fef2f2;
+  }
+}
+
 .dropdownMenu__content {
   min-width: 220px;
   background-color: white;
@@ -727,5 +751,15 @@ body {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+.opensea-copy {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: gray;
+
+  a {
+    color: gray;
   }
 }

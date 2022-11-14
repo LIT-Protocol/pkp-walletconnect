@@ -17,32 +17,16 @@ const icon = (
   </svg>
 );
 
-export default function Header({
-  currentPKP,
-  myPKPs,
-  chainId,
-  handleSwitchChain,
-  handleSwitchPKP,
-  handleLogout,
-}) {
-  const { address, isConnected } = useAccount();
+export default function Header({ networkMenu, accountMenu }) {
+  const { isConnected } = useAccount();
 
   if (isConnected) {
     return (
       <header className="header">
         {icon}
         <div className="header__row">
-          <NetworkMenu
-            chainId={chainId}
-            handleSwitchChain={handleSwitchChain}
-          />
-          <AccountMenu
-            address={address}
-            currentPKP={currentPKP}
-            myPKPs={myPKPs}
-            handleSwitchPKP={handleSwitchPKP}
-            handleLogout={handleLogout}
-          />
+          {networkMenu}
+          {accountMenu}
         </div>
       </header>
     );

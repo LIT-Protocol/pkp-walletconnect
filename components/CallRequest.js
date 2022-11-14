@@ -1,4 +1,9 @@
-import { getTransactionToSign, getTransactionToSend } from '../utils/helpers';
+import {
+  getTransactionToSign,
+  getTransactionToSend,
+  isPayloadSupported,
+  convertHexToUtf8,
+} from '../utils/helpers';
 import { CodeBlock, codepen } from 'react-code-blocks';
 
 export default function CallRequest({
@@ -9,6 +14,7 @@ export default function CallRequest({
   wcApproveRequest,
   wcRejectRequest,
 }) {
+  const supported = isPayloadSupported(wcRequest);
   let title;
   let description;
 
@@ -21,6 +27,9 @@ export default function CallRequest({
       } wants you to sign the following message:`;
       break;
     case 'eth_signTypedData':
+    case 'eth_signTypedData_v1':
+    case 'eth_signTypedData_v3':
+    case 'eth_signTypedData_v4':
       title = 'Sign typed data';
       description = `${
         wcPeerMeta && wcPeerMeta.name ? wcPeerMeta.name : 'An unidentified app'
@@ -41,8 +50,8 @@ export default function CallRequest({
       wants you to approve the following transaction:`;
       break;
     default:
-      title = 'Unknown request';
-      description = `Unable to handle this unknown request: ${wcRequest.method}.`;
+      title = 'Unsupported request';
+      description = `Unable to handle this request: ${wcRequest.method}.`;
   }
 
   return (
@@ -60,13 +69,16 @@ export default function CallRequest({
           <p>{description}</p>
           <div className="section">
             {wcRequest.method === 'eth_sign' && (
-              <p className="request__message">{wcRequest.params[1]}</p>
+              <p className="request__message">
+                {convertHexToUtf8(wcRequest.params[1])}
+              </p>
             )}
             {wcRequest.method === 'personal_sign' && (
-              <p className="request__message">{wcRequest.params[0]}</p>
+              <p className="request__message">
+                {convertHexToUtf8(wcRequest.params[0])}
+              </p>
             )}
-            {wcRequest.method === 'eth_signTypedData' && (
-              // <p className="request__message">{wcRequest.params[1]}</p>
+            {wcRequest.method.startsWith('eth_signTypedData') && (
               <CodeBlock
                 showLineNumbers={false}
                 text={JSON.stringify(JSON.parse(wcRequest.params[1]), null, 2)}
@@ -101,28 +113,44 @@ export default function CallRequest({
           </div>
         </div>
         <div className="request__footer">
-          <button
-            className="request__btn"
-            onClick={() =>
-              wcRejectRequest({
-                payload: wcRequest,
-                currentPKP: currentPKP,
-              })
-            }
-          >
-            Reject
-          </button>
-          <button
-            className="request__btn"
-            onClick={() =>
-              wcApproveRequest({
-                payload: wcRequest,
-                currentPKP: currentPKP,
-              })
-            }
-          >
-            Approve
-          </button>
+          {supported ? (
+            <>
+              <button
+                className="request__btn"
+                onClick={() =>
+                  wcRejectRequest({
+                    payload: wcRequest,
+                    currentPKP: currentPKP,
+                  })
+                }
+              >
+                Reject
+              </button>
+              <button
+                className="request__btn"
+                onClick={() =>
+                  wcApproveRequest({
+                    payload: wcRequest,
+                    currentPKP: currentPKP,
+                  })
+                }
+              >
+                Approve
+              </button>
+            </>
+          ) : (
+            <button
+              className="request__btn"
+              onClick={() =>
+                wcRejectRequest({
+                  payload: wcRequest,
+                  currentPKP: currentPKP,
+                })
+              }
+            >
+              Dismiss
+            </button>
+          )}
         </div>
       </div>
     </main>

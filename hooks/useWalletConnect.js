@@ -68,13 +68,13 @@ const rejectRequestWithMessage = (wcConnector, payload, message) => {
   wcConnector.rejectRequest({ id: payload.id, error: { message } });
 };
 
-// Updated array of pending WalletConnect requests
+// Update array of pending WalletConnect requests
 const addToWcRequests = (payload, requests) => {
   const updatedRequests = [...requests, payload];
   return updatedRequests;
 };
 
-// Updated dictionary of completed WalletConnect call requests
+// Update dictionary of completed WalletConnect call requests
 const addToWcResults = (result, results) => {
   const updatedResults = { [result.payload.id]: result, ...results };
   return updatedResults;
@@ -88,6 +88,7 @@ const filterWcRequest = (payload, requests) => {
   return filteredRequests;
 };
 
+// Save dictionary of completed WalletConnect call requests to local storage
 const saveResultsToStorage = (address, results) => {
   const savedResults = localStorage.getItem(WC_RESULTS_STORAGE_KEY);
   let newResults;
@@ -253,15 +254,17 @@ const useWalletConnect = () => {
   const wcApproveRequest = useCallback(
     async ({ payload, currentPKP }) => {
       console.log('Approve request via WalletConnect');
+      let result;
+      let status;
 
       try {
-        let result = await handleRequest(
+        result = await handleRequest(
           payload,
           currentPKP.pubkey,
           wcConnector.chainId
         );
 
-        let wcResult = result.hash
+        const wcResult = result.hash
           ? result.hash
           : result.raw
           ? result.raw
@@ -272,39 +275,31 @@ const useWalletConnect = () => {
           result: wcResult,
         });
 
-        // Add request result to results
+        status = 'success';
+      } catch (err) {
+        console.log(err);
+
+        rejectRequestWithMessage(wcConnector, payload, err.message);
+
+        status = 'error';
+      } finally {
+        // Filter out completed request
+        const updatedRequests = filterWcRequest(payload, wcRequestsRef.current);
+        setWcRequests(updatedRequests);
+
+        // Save results to local storage
         const updatedResults = addToWcResults(
           {
-            status: 'success',
+            status: status,
             payload: payload,
             result: result,
             error: null,
           },
           wcResultsRef.current
         );
+
         setWcResults(updatedResults);
         saveResultsToStorage(currentPKP.ethAddress, updatedResults);
-      } catch (err) {
-        console.log(err);
-
-        rejectRequestWithMessage(wcConnector, payload, err.message);
-
-        // Add request result to results
-        const updatedResults = addToWcResults(
-          {
-            status: 'error',
-            payload: payload,
-            result: null,
-            error: err,
-          },
-          wcResultsRef.current
-        );
-        setWcResults(updatedResults);
-        saveResultsToStorage(currentPKP.ethAddress, updatedResults);
-      } finally {
-        // Filter out completed request
-        const updatedRequests = filterWcRequest(payload, wcRequestsRef.current);
-        setWcRequests(updatedRequests);
       }
     },
     [wcConnector]
@@ -321,7 +316,11 @@ const useWalletConnect = () => {
         'User rejected WalletConnect request'
       );
 
-      // Add request result to results
+      // Filter out completed request
+      const updatedRequests = filterWcRequest(payload, wcRequestsRef.current);
+      setWcRequests(updatedRequests);
+
+      // Save results to local storage
       const updatedResults = addToWcResults(
         {
           status: 'rejected',
@@ -333,10 +332,6 @@ const useWalletConnect = () => {
       );
       setWcResults(updatedResults);
       saveResultsToStorage(currentPKP.ethAddress, updatedResults);
-
-      // Filter out completed request
-      const updatedRequests = filterWcRequest(payload, wcRequestsRef.current);
-      setWcRequests(updatedRequests);
     },
     [wcConnector]
   );
