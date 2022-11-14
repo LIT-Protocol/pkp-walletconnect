@@ -1,6 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import WalletConnect from '@walletconnect/client';
-import { getTransactionToSign, getTransactionToSend } from '../utils/helpers';
+import {
+  getTransactionToSign,
+  getTransactionToSend,
+  getSignVersionByMessageFormat,
+  getSignVersionEnum,
+} from '../utils/helpers';
 import {
   signMessage,
   signPersonalMessage,
@@ -10,16 +15,15 @@ import {
 } from '../utils/lit-client';
 import {
   SUPPORTED_CHAINS,
+  WC_SESSION_STORAGE_KEY,
   WC_RESULTS_STORAGE_KEY,
-  WC_STORAGE_KEY,
 } from '../utils/constants';
 
 // Handle WalletConnect request
 const handleRequest = async (payload, pubkey, chainId) => {
+  let version = null;
   let transaction = null;
   let result = null;
-
-  const rpcUrl = SUPPORTED_CHAINS[chainId].rpc_url;
 
   switch (payload.method) {
     case 'eth_sign':
@@ -29,13 +33,20 @@ const handleRequest = async (payload, pubkey, chainId) => {
       result = signPersonalMessage(payload.params[0], pubkey);
       break;
     case 'eth_signTypedData':
-      result = signTypedData(payload.params[1], 'V4', pubkey);
+      version = getSignVersionByMessageFormat(payload.params[1]);
+      result = signTypedData(payload.params[1], version, pubkey);
       break;
-    case 'eth_signTypedDataV3':
-      result = signTypedData(payload.params[1], 'V3', pubkey);
+    case 'eth_signTypedData_v1':
+      version = getSignVersionEnum('v1');
+      result = signTypedData(payload.params[1], version, pubkey);
       break;
-    case 'eth_signTypedDataV4':
-      result = signTypedData(payload.params[1], 'V4', pubkey);
+    case 'eth_signTypedData_v3':
+      version = getSignVersionEnum('v3');
+      result = signTypedData(payload.params[1], version, pubkey);
+      break;
+    case 'eth_signTypedData_v4':
+      version = getSignVersionEnum('v4');
+      result = signTypedData(payload.params[1], version, pubkey);
       break;
     case 'eth_signTransaction':
       transaction = getTransactionToSign(payload.params[0]);
@@ -43,7 +54,7 @@ const handleRequest = async (payload, pubkey, chainId) => {
       break;
     case 'eth_sendTransaction':
       transaction = getTransactionToSend(payload.params[0], chainId);
-      result = sendTransaction(transaction, pubkey, rpcUrl);
+      result = sendTransaction(transaction, pubkey);
       break;
     default:
       throw new Error('Unsupported WalletConnect method');
@@ -77,6 +88,23 @@ const filterWcRequest = (payload, requests) => {
   return filteredRequests;
 };
 
+const saveResultsToStorage = (address, results) => {
+  const savedResults = localStorage.getItem(WC_RESULTS_STORAGE_KEY);
+  let newResults;
+  if (savedResults) {
+    const parsedResults = JSON.parse(savedResults);
+    if (parsedResults[address.toLowerCase()]) {
+      newResults = parsedResults;
+      newResults[address.toLowerCase()] = results;
+    } else {
+      newResults = { [address.toLowerCase()]: results, ...parsedResults };
+    }
+  } else {
+    newResults = { [address.toLowerCase()]: results };
+  }
+  localStorage.setItem(WC_RESULTS_STORAGE_KEY, JSON.stringify(newResults));
+};
+
 const useWalletConnect = () => {
   const [wcConnector, setWcConnector] = useState(null);
   const [wcSessionRequest, setWcSessionRequest] = useState(null);
@@ -104,7 +132,7 @@ const useWalletConnect = () => {
     } catch (error) {
       console.error('Error trying to close WalletConnect session: ', error);
     }
-    localStorage.removeItem(WC_STORAGE_KEY);
+    localStorage.removeItem(WC_SESSION_STORAGE_KEY);
     setWcConnector(null);
     setWcSessionRequest(null);
     setWcRequests([]);
@@ -121,7 +149,7 @@ const useWalletConnect = () => {
           url: 'https://litprotocol.com',
           name: 'Lit PKP Wallet',
         },
-        storageId: WC_STORAGE_KEY,
+        storageId: WC_SESSION_STORAGE_KEY,
       });
       setWcConnector(wcConnector);
 
@@ -255,6 +283,7 @@ const useWalletConnect = () => {
           wcResultsRef.current
         );
         setWcResults(updatedResults);
+        saveResultsToStorage(currentPKP.ethAddress, updatedResults);
       } catch (err) {
         console.log(err);
 
@@ -271,6 +300,7 @@ const useWalletConnect = () => {
           wcResultsRef.current
         );
         setWcResults(updatedResults);
+        saveResultsToStorage(currentPKP.ethAddress, updatedResults);
       } finally {
         // Filter out completed request
         const updatedRequests = filterWcRequest(payload, wcRequestsRef.current);
@@ -282,7 +312,7 @@ const useWalletConnect = () => {
 
   // Reject request via WalletConnect
   const wcRejectRequest = useCallback(
-    async ({ payload }) => {
+    async ({ payload, currentPKP }) => {
       console.log('Reject request via WalletConnect');
 
       rejectRequestWithMessage(
@@ -294,7 +324,7 @@ const useWalletConnect = () => {
       // Add request result to results
       const updatedResults = addToWcResults(
         {
-          status: 'error',
+          status: 'rejected',
           payload: payload,
           result: null,
           error: 'User rejected WalletConnect request',
@@ -302,6 +332,7 @@ const useWalletConnect = () => {
         wcResultsRef.current
       );
       setWcResults(updatedResults);
+      saveResultsToStorage(currentPKP.ethAddress, updatedResults);
 
       // Filter out completed request
       const updatedRequests = filterWcRequest(payload, wcRequestsRef.current);
@@ -322,6 +353,7 @@ const useWalletConnect = () => {
     wcUpdateSession,
     wcApproveRequest,
     wcRejectRequest,
+    setWcResults,
   };
 };
 

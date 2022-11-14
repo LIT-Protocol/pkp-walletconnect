@@ -1,5 +1,4 @@
-export const WC_STORAGE_KEY = 'pkp_wc_session';
-export const WC_REQUESTS_STORAGE_KEY = 'pkp_wc_requests';
+export const WC_SESSION_STORAGE_KEY = 'pkp_wc_session';
 export const WC_RESULTS_STORAGE_KEY = 'pkp_wc_results';
 
 export const DEFAULT_CHAIN_ID = 80001;

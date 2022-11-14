@@ -8,7 +8,11 @@ import {
   connectLitContracts,
   fetchPKPsByAddress,
 } from '../utils/lit-contracts';
-import { DEFAULT_CHAIN_ID, WC_STORAGE_KEY } from '../utils/constants';
+import {
+  DEFAULT_CHAIN_ID,
+  WC_RESULTS_STORAGE_KEY,
+  WC_SESSION_STORAGE_KEY,
+} from '../utils/constants';
 import ConnectWallet from '../components/ConnectWallet';
 import Loading from '../components/Loading';
 import HomeTab from '../components/tabs/HomeTab';
@@ -19,8 +23,8 @@ import SessionRequest from '../components/SessionRequest';
 import CallRequest from '../components/CallRequest';
 import InfoTab from '../components/tabs/InfoTab';
 import Layout from '../components/Layout';
-import Footer from '../components/footer';
-import Header from '../components/header';
+import Footer from '../components/Footer';
+import Header from '../components/Header';
 
 export default function Home() {
   const [currentPKP, setCurrentPKP] = useState(null);
@@ -49,16 +53,20 @@ export default function Home() {
     wcUpdateSession,
     wcApproveRequest,
     wcRejectRequest,
+    setWcResults,
   } = useWalletConnect();
 
   const handleSwitchPKP = useCallback(
     newPKPEthAddress => {
       console.log('handleSwitchPKP', newPKPEthAddress);
-      let newPKP = myPKPs.find(pkp => pkp.ethAddress === newPKPEthAddress);
+      let newPKP = myPKPs.find(
+        pkp => pkp.ethAddress.toLowerCase() === newPKPEthAddress.toLowerCase()
+      );
       wcUpdateSession({ currentPKP: newPKP, chainId });
       setCurrentPKP(newPKP);
+      setWcResults({});
     },
-    [myPKPs, chainId, wcUpdateSession]
+    [myPKPs, chainId, wcUpdateSession, setWcResults]
   );
 
   const handleSwitchChain = useCallback(
@@ -78,11 +86,14 @@ export default function Home() {
       setMyPKPs([]);
       setChainId(DEFAULT_CHAIN_ID);
       disconnect();
+      localStorage.removeItem(WC_RESULTS_STORAGE_KEY);
+      setWcResults({});
     },
-    [disconnect, wcDisconnect]
+    [disconnect, wcDisconnect, setWcResults]
   );
 
   useEffect(() => {
+    // Get current user's PKPs
     async function fetchMyPKPs() {
       setFetching(true);
 
@@ -121,9 +132,8 @@ export default function Home() {
   useEffect(() => {
     // Check if cloud wallet exists but WalletConnect is not connected
     if (currentPKP && !wcConnector) {
-      const wcSession = localStorage.getItem(WC_STORAGE_KEY);
-
       // Reconnect if URI exists in local storage
+      const wcSession = localStorage.getItem(WC_SESSION_STORAGE_KEY);
       if (wcSession) {
         const session = JSON.parse(wcSession);
 
@@ -132,12 +142,16 @@ export default function Home() {
         }
 
         // Check if current PKP is the same as the one in the session
-        if (currentPKP.ethAddress === session.accounts[0]) {
+        if (
+          currentPKP.ethAddress.toLowerCase() ===
+          session.accounts[0].toLowerCase()
+        ) {
           wcConnect({ session: session });
         } else {
           // Update current PKP to the one in the session if user owns that PKP
           const pkp = myPKPs.find(
-            pkp => pkp.ethAddress === session.accounts[0]
+            pkp =>
+              pkp.ethAddress.toLowerCase() === session.accounts[0].toLowerCase()
           );
           if (pkp) {
             wcConnect({ session: session });
@@ -150,6 +164,19 @@ export default function Home() {
       }
     }
   }, [currentPKP, myPKPs, chainId, wcConnector, wcConnect, wcDisconnect]);
+
+  useEffect(() => {
+    if (currentPKP && Object.keys(wcResults).length === 0) {
+      // Load recent activity if exists in local storage
+      const savedResults = localStorage.getItem(WC_RESULTS_STORAGE_KEY);
+      if (savedResults) {
+        const results = JSON.parse(savedResults);
+        if (results && results[currentPKP.ethAddress.toLowerCase()]) {
+          setWcResults(results[currentPKP.ethAddress.toLowerCase()]);
+        }
+      }
+    }
+  }, [currentPKP, wcResults, setWcResults]);
 
   if (!hasMounted) {
     return null;

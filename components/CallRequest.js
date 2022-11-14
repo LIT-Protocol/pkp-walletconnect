@@ -106,6 +106,7 @@ export default function CallRequest({
             onClick={() =>
               wcRejectRequest({
                 payload: wcRequest,
+                currentPKP: currentPKP,
               })
             }
           >
