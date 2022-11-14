@@ -1,27 +1,15 @@
 import LitJsSdk from 'lit-js-sdk';
 import { ethers } from 'ethers';
-import { serialize, recoverAddress } from '@ethersproject/transactions';
-import {
-  hexlify,
-  splitSignature,
-  hexZeroPad,
-  joinSignature,
-} from '@ethersproject/bytes';
-import { recoverPublicKey, computePublicKey } from '@ethersproject/signing-key';
-import { verifyMessage } from '@ethersproject/wallet';
+import { recoverAddress } from '@ethersproject/transactions';
+import { joinSignature } from '@ethersproject/bytes';
 import {
   SignTypedDataVersion,
   TypedDataUtils,
+  typedSignatureHash,
   recoverPersonalSignature,
   recoverTypedSignature,
 } from '@metamask/eth-sig-util';
-import {
-  convertHexToUtf8,
-  getMessageToSign,
-  getPersonalMessageToSign,
-  hashMessage,
-  hashTypedDataMessage,
-} from './helpers';
+import { convertHexToUtf8, getSignVersionEnum } from './helpers';
 import * as ethUtil from 'ethereumjs-util';
 
 const PERSONAL_SIGN_CODE = `
@@ -75,7 +63,6 @@ export async function signPersonalMessage(message, publicKey) {
     },
   });
   const signatures = response.signatures;
-  // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
   const dataSigned = sig.dataSigned;
   const encodedSig = joinSignature({
@@ -83,32 +70,31 @@ export async function signPersonalMessage(message, publicKey) {
     s: '0x' + sig.s,
     v: sig.recid,
   });
-  console.log('encodedSig', encodedSig);
-  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
-  console.log('dataSigned', dataSigned);
-  const splitSig = splitSignature(encodedSig);
-  console.log('splitSig', splitSig);
 
-  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
-  console.log('uncompressed recoveredPubkey', recoveredPubkey);
-  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
-  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
-  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
-  console.log('recoveredAddress', recoveredAddress);
-
-  // verifyMessage hashes the message for you
-  // https://docs.ethers.io/v5/api/utils/signing-key/#utils-verifyMessage
-  const recoveredAddressViaMessage = verifyMessage(messageStr, encodedSig);
-  console.log('recoveredAddressViaMessage', recoveredAddressViaMessage);
-
-  // options.data - The hex data that was signed.
-  // https://github.com/MetaMask/eth-sig-util/blob/9f01c9d7922b717ddda3aa894c38fbba623e8bdf/src/personal-sign.ts#L53
   console.log(
-    'recoverPersonalSignature',
-    recoverPersonalSignature({ data: message, signature: encodedSig })
+    'Sign personal message verified?',
+    verifySignPersonalMessage(message, encodedSig, publicKey)
   );
 
   return encodedSig;
+}
+
+function verifySignPersonalMessage(message, signature, publicKey) {
+  const ethAddress = ethers.utils.computeAddress(publicKey);
+
+  // verifyMessage hashes the message for you
+  // https://docs.ethers.io/v5/api/utils/signing-key/#utils-verifyMessage
+  // const messageStr = convertHexToUtf8(message);
+  // const recoveredAddress = verifyMessage(messageStr, signature);
+
+  // options.data - The hex data that was signed.
+  // https://github.com/MetaMask/eth-sig-util/blob/9f01c9d7922b717ddda3aa894c38fbba623e8bdf/src/personal-sign.ts#L53
+  const recoveredAddress = recoverPersonalSignature({
+    data: message,
+    signature: signature,
+  });
+
+  return ethAddress.toLowerCase() === recoveredAddress.toLowerCase();
 }
 
 export async function signMessage(message, publicKey) {
@@ -120,20 +106,19 @@ export async function signMessage(message, publicKey) {
     chain: 'mumbai',
   });
 
-  const toSign = ethers.utils.arrayify(ethers.utils.hashMessage(message));
+  const messageHash = ethers.utils.hashMessage(message);
+  const messageHashBytes = ethers.utils.arrayify(messageHash);
 
   const response = await litNodeClient.executeJs({
     code: SIGN_CODE,
     authSig,
     jsParams: {
-      toSign: toSign,
+      toSign: messageHashBytes,
       publicKey: publicKey,
       sigName: 'sig1',
     },
   });
-  console.log('response', response);
   const signatures = response.signatures;
-  // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
   const dataSigned = sig.dataSigned;
   const encodedSig = joinSignature({
@@ -141,46 +126,49 @@ export async function signMessage(message, publicKey) {
     s: '0x' + sig.s,
     v: sig.recid,
   });
-  console.log('encodedSig', encodedSig);
-  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
-  console.log('dataSigned', dataSigned);
-  const splitSig = splitSignature(encodedSig);
-  console.log('splitSig', splitSig);
 
-  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
-  console.log('uncompressed recoveredPubkey', recoveredPubkey);
-  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
-  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
-  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
-  console.log('recoveredAddress', recoveredAddress);
-
-  // verifyMessage hashes the message for you
-  // https://docs.ethers.io/v5/api/utils/signing-key/#utils-verifyMessage
-  const recoveredAddressViaMessage = verifyMessage(message, encodedSig);
-  console.log('recoveredAddressViaMessage', recoveredAddressViaMessage);
-
-  const testparams = ethUtil.fromRpcSig(encodedSig);
-  console.log('ethUtil testparams', testparams);
-  const testresult = ethUtil.ecrecover(
-    ethUtil.toBuffer(ethers.utils.hashMessage(message)),
-    testparams.v,
-    testparams.r,
-    testparams.s
+  console.log(
+    'Sign message verified?',
+    verifySignMessage(message, encodedSig, publicKey)
   );
-  console.log('ethUtil testresult', testresult);
-  const testsigner = ethUtil.bufferToHex(ethUtil.publicToAddress(testresult));
-  console.log('ethUtil testsigner', testsigner);
 
   return encodedSig;
 }
 
+function verifySignMessage(message, signature, publicKey) {
+  const ethAddress = ethers.utils.computeAddress(publicKey);
+
+  // verifyMessage hashes the message for you
+  // https://docs.ethers.io/v5/api/utils/signing-key/#utils-verifyMessage
+  // const recoveredAddress = verifyMessage(message, signature);
+
+  // https://github.com/ethereumjs/ethereumjs-monorepo/blob/master/packages/util/docs/README.md#ecrecover
+  const messageHash = ethers.utils.hashMessage(message);
+  const sig = ethUtil.fromRpcSig(signature);
+  const pubkey = ethUtil.ecrecover(
+    ethUtil.toBuffer(messageHash),
+    sig.v,
+    sig.r,
+    sig.s
+  );
+  const recoveredAddress = ethUtil.bufferToHex(ethUtil.publicToAddress(pubkey));
+
+  return ethAddress.toLowerCase() === recoveredAddress.toLowerCase();
+}
+
 export async function signTypedData(data, version, publicKey) {
-  const { types, domain, primaryType, message } = JSON.parse(data);
-  delete types.EIP712Domain;
-  const typedData = { types, primaryType, domain, message };
-  const versionEnum =
-    version === 'V3' ? SignTypedDataVersion.V3 : SignTypedDataVersion.V4;
-  const hash = TypedDataUtils.eip712Hash(typedData, versionEnum);
+  let messageHash;
+
+  if (version === SignTypedDataVersion.V1) {
+    // https://github.com/MetaMask/eth-sig-util/blob/9f01c9d7922b717ddda3aa894c38fbba623e8bdf/src/sign-typed-data.ts#L435
+    messageHash = typedSignatureHash(data);
+  } else {
+    const { types, domain, primaryType, message } = JSON.parse(data);
+    delete types.EIP712Domain;
+    const typedData = { types, primaryType, domain, message };
+    // https://github.com/MetaMask/eth-sig-util/blob/main/src/sign-typed-data.ts#L382
+    messageHash = TypedDataUtils.eip712Hash(typedData, version);
+  }
 
   if (!litNodeClient) {
     await initLitNodeClient();
@@ -196,14 +184,12 @@ export async function signTypedData(data, version, publicKey) {
     code: SIGN_CODE,
     authSig,
     jsParams: {
-      toSign: hash,
+      toSign: messageHash,
       publicKey: publicKey,
       sigName: 'sig1',
     },
   });
-  console.log('response', response);
   const signatures = response.signatures;
-  // console.log('signatures: ', signatures);
   const sig = signatures.sig1;
   const dataSigned = sig.dataSigned;
   const encodedSig = joinSignature({
@@ -211,31 +197,36 @@ export async function signTypedData(data, version, publicKey) {
     s: '0x' + sig.s,
     v: sig.recid,
   });
-  console.log('encodedSig', encodedSig);
-  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
-  console.log('dataSigned', dataSigned);
-  const splitSig = splitSignature(encodedSig);
-  console.log('splitSig', splitSig);
 
-  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
-  console.log('uncompressed recoveredPubkey', recoveredPubkey);
-  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
-  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
-  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
-  console.log('recoveredAddress', recoveredAddress);
-
-  // data: typed data
-  // https://metamask.github.io/eth-sig-util/latest/modules.html#recoverTypedSignature
   console.log(
-    'recoverTypedSignature',
-    recoverTypedSignature({
-      data: typedData,
-      signature: encodedSig,
-      version: versionEnum,
-    })
+    `Sign typed data ${version} verified?`,
+    verifySignTypedData(data, version, encodedSig, publicKey)
   );
 
   return encodedSig;
+}
+
+function verifySignTypedData(data, version, signature, publicKey) {
+  const ethAddress = ethers.utils.computeAddress(publicKey);
+
+  let checkData;
+
+  if (version === SignTypedDataVersion.V1) {
+    checkData = data;
+  } else {
+    const { types, domain, primaryType, message } = JSON.parse(data);
+    delete types.EIP712Domain;
+    checkData = { types, primaryType, domain, message };
+  }
+
+  // https://metamask.github.io/eth-sig-util/latest/modules.html#recoverTypedSignature
+  const recoveredAddress = recoverTypedSignature({
+    data: checkData,
+    signature: signature,
+    version: version,
+  });
+
+  return ethAddress.toLowerCase() === recoveredAddress.toLowerCase();
 }
 
 export async function signTransaction(transaction, publicKey) {
@@ -267,9 +258,7 @@ export async function signTransaction(transaction, publicKey) {
       sigName: 'sig1',
     },
   });
-  // console.log('response: ', response);
   const sig = response.signatures.sig1;
-  // console.log('sig: ', sig);
   const dataSigned = sig.dataSigned;
   const encodedSig = joinSignature({
     r: '0x' + sig.r,
@@ -277,35 +266,39 @@ export async function signTransaction(transaction, publicKey) {
     v: sig.recid,
   });
 
-  console.log('encodedSig', encodedSig);
-  console.log('sig length in bytes: ', encodedSig.substring(2).length / 2);
-  console.log('dataSigned', dataSigned);
-  const splitSig = splitSignature(encodedSig);
-  console.log('splitSig', splitSig);
-
-  const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
-  console.log('uncompressed recoveredPubkey', recoveredPubkey);
-  const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
-  console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
-  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
-  console.log('recoveredAddress', recoveredAddress);
-
   const signedTxn = ethers.utils.serializeTransaction(
     transaction,
     sig.signature
   );
   console.log('signedTxn: ', signedTxn);
 
+  console.log(
+    'Sign transaction verified?',
+    verifySignTransaction(dataSigned, encodedSig, publicKey)
+  );
+
   return signedTxn;
 }
 
-export async function sendTransaction(transaction, publicKey, rpcUrl) {
+function verifySignTransaction(dataSigned, encodedSig, publicKey) {
+  const ethAddress = ethers.utils.computeAddress(publicKey);
+  // const recoveredPubkey = recoverPublicKey(dataSigned, encodedSig);
+  // console.log('uncompressed recoveredPubkey', recoveredPubkey);
+  // const compressedRecoveredPubkey = computePublicKey(recoveredPubkey, true);
+  // console.log('compressed recoveredPubkey', compressedRecoveredPubkey);
+  const recoveredAddress = recoverAddress(dataSigned, encodedSig);
+
+  return ethAddress.toLowerCase() === recoveredAddress.toLowerCase();
+}
+
+export async function sendTransaction(transaction, publicKey) {
   if (!litNodeClient) {
     await initLitNodeClient();
   }
 
   const signedTxn = await signTransaction(transaction, publicKey);
 
+  const rpcUrl = SUPPORTED_CHAINS[transaction.chainId].rpc_url;
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
   const sentTxn = await provider.sendTransaction(signedTxn);
   console.log('sentTxn', sentTxn);
@@ -313,6 +306,14 @@ export async function sendTransaction(transaction, publicKey, rpcUrl) {
   return sentTxn;
 }
 
-export function getLitNodeClient() {
-  return litNodeClient;
+export async function getAuthSig() {
+  if (!litNodeClient) {
+    await initLitNodeClient();
+  }
+
+  const authSig = await LitJsSdk.checkAndSignAuthMessage({
+    chain: 'mumbai',
+  });
+
+  return authSig;
 }
