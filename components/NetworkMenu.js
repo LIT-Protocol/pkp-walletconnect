@@ -1,15 +1,14 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { CheckIcon } from '@radix-ui/react-icons';
-import { SUPPORTED_CHAINS } from '../utils/constants';
 
-export default function NetworkMenu({ chainId, handleSwitchChain }) {
-  const chains = SUPPORTED_CHAINS;
+export default function NetworkMenu({ chainId, chains, handleSwitchChain }) {
+  const currentChain = chains.find(chain => chain.chainId === chainId);
 
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button className="header__btn" aria-label="View networks">
-          {chains[chainId].name}
+          {currentChain ? currentChain.name : 'Unknown network'}
         </button>
       </DropdownMenu.Trigger>
 
@@ -23,17 +22,17 @@ export default function NetworkMenu({ chainId, handleSwitchChain }) {
             value={chainId}
             onValueChange={handleSwitchChain}
           >
-            {Object.keys(chains).length > 0 &&
-              Object.entries(chains).map((entry, index) => (
+            {chains.length > 0 &&
+              chains.map((chain, index) => (
                 <DropdownMenu.RadioItem
-                  key={chains[entry[0]].chain_id}
+                  key={chain.chainId}
                   className="dropdownMenu__radio-item"
-                  value={chains[entry[0]].chain_id}
+                  value={chain.chainId}
                 >
                   <DropdownMenu.ItemIndicator className="dropdownMenu__itemIndicator">
                     <CheckIcon />
                   </DropdownMenu.ItemIndicator>
-                  {chains[entry[0]].name}
+                  {chain.name}
                 </DropdownMenu.RadioItem>
               ))}
           </DropdownMenu.RadioGroup>

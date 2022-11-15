@@ -7,8 +7,6 @@ import {
 import { CodeBlock, codepen } from 'react-code-blocks';
 
 export default function CallRequest({
-  currentPKP,
-  chainId,
   wcPeerMeta,
   wcRequest,
   wcApproveRequest,
@@ -117,23 +115,13 @@ export default function CallRequest({
             <>
               <button
                 className="request__btn"
-                onClick={() =>
-                  wcRejectRequest({
-                    payload: wcRequest,
-                    currentPKP: currentPKP,
-                  })
-                }
+                onClick={() => wcRejectRequest(wcRequest)}
               >
                 Reject
               </button>
               <button
                 className="request__btn"
-                onClick={() =>
-                  wcApproveRequest({
-                    payload: wcRequest,
-                    currentPKP: currentPKP,
-                  })
-                }
+                onClick={() => wcApproveRequest(wcRequest)}
               >
                 Approve
               </button>
@@ -141,12 +129,7 @@ export default function CallRequest({
           ) : (
             <button
               className="request__btn"
-              onClick={() =>
-                wcRejectRequest({
-                  payload: wcRequest,
-                  currentPKP: currentPKP,
-                })
-              }
+              onClick={() => wcRejectRequest(wcRequest)}
             >
               Dismiss
             </button>

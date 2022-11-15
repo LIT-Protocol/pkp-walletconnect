@@ -3,24 +3,24 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { CheckIcon } from '@radix-ui/react-icons';
 
 export default function AccountMenu({
+  ownerAddress,
   address,
-  currentPKP,
-  myPKPs,
-  handleSwitchPKP,
+  accounts,
+  handleSwitchAddress,
   handleLogout,
 }) {
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <span className="header__btn" aria-label="View account options">
-          {truncate(address)}
+          {truncate(ownerAddress)}
         </span>
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content className="dropdownMenu__content" sideOffset={5}>
           <DropdownMenu.Label className="dropdownMenu__label">
-            Signed in as {truncate(address)}
+            Signed in as {truncate(ownerAddress)}
           </DropdownMenu.Label>
 
           <DropdownMenu.Separator className="dropdownMenu__separator" />
@@ -29,21 +29,21 @@ export default function AccountMenu({
             My cloud wallets
           </DropdownMenu.Label>
 
-          {myPKPs.length > 0 && (
+          {accounts.length > 0 && (
             <DropdownMenu.RadioGroup
-              value={currentPKP.ethAddress}
-              onValueChange={handleSwitchPKP}
+              value={address}
+              onValueChange={handleSwitchAddress}
             >
-              {myPKPs.map(pkp => (
+              {accounts.map(account => (
                 <DropdownMenu.RadioItem
-                  key={pkp.ethAddress}
+                  key={account.address}
                   className="dropdownMenu__radio-item"
-                  value={pkp.ethAddress}
+                  value={account.address}
                 >
                   <DropdownMenu.ItemIndicator className="dropdownMenu__itemIndicator">
                     <CheckIcon />
                   </DropdownMenu.ItemIndicator>
-                  {truncate(pkp.ethAddress)}
+                  {truncate(account.address)}
                 </DropdownMenu.RadioItem>
               ))}
             </DropdownMenu.RadioGroup>

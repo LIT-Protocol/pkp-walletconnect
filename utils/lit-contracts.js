@@ -87,6 +87,7 @@ export const getPKPNFTTokenIdsByAddress = async address => {
 
 // Fetch PKPs by address
 export const fetchPKPsByAddress = async address => {
+  console.log('fetchPKPsByAddress', address);
   const tokenIds = await getPKPNFTTokenIdsByAddress(address);
   let pkps = [];
 
@@ -97,8 +98,8 @@ export const fetchPKPsByAddress = async address => {
       const ethAddress = ethers.utils.computeAddress(pubkey);
       pkps.push({
         tokenId: tokenIds[i],
-        pubkey: pubkey,
-        ethAddress: ethAddress,
+        publicKey: pubkey,
+        address: ethAddress,
       });
     }
   }

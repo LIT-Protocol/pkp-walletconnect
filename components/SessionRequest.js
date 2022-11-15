@@ -1,8 +1,6 @@
 import Link from 'next/link';
 
 export default function SessionRequest({
-  currentPKP,
-  chainId,
   wcSessionRequest,
   wcApproveSession,
   wcRejectSession,
@@ -62,10 +60,7 @@ export default function SessionRequest({
           <button className="request__btn" onClick={() => wcRejectSession()}>
             Cancel
           </button>
-          <button
-            className="request__btn"
-            onClick={() => wcApproveSession({ currentPKP, chainId })}
-          >
+          <button className="request__btn" onClick={() => wcApproveSession()}>
             Connect
           </button>
         </div>

@@ -287,10 +287,6 @@ export async function sendTransaction(transaction, publicKey) {
 }
 
 export async function getAuthSig() {
-  if (!litNodeClient) {
-    await initLitNodeClient();
-  }
-
   const authSig = await LitJsSdk.checkAndSignAuthMessage({
     chain: 'mumbai',
   });
