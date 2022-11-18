@@ -1,17 +1,16 @@
 import Link from 'next/link';
+import { useAppActions } from '../context/AppContext';
 
-export default function SessionRequest({
-  wcSessionRequest,
-  wcApproveSession,
-  wcRejectSession,
-}) {
-  const wcPeerMeta = wcSessionRequest.params[0].peerMeta;
+export default function SessionRequest({ payload }) {
+  const wcPeerMeta = payload.params[0].peerMeta;
+  const { wcApproveSession, wcRejectSession } = useAppActions();
 
   return (
     <main className="container">
       <div className="request">
         <div className="request__body">
           {wcPeerMeta?.icons.length > 0 && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               className="request__icon"
               src={wcPeerMeta.icons[0]}
@@ -57,10 +56,16 @@ export default function SessionRequest({
           </div>
         </div>
         <div className="request__footer">
-          <button className="request__btn" onClick={() => wcRejectSession()}>
+          <button
+            className="request__btn"
+            onClick={() => wcRejectSession(payload)}
+          >
             Cancel
           </button>
-          <button className="request__btn" onClick={() => wcApproveSession()}>
+          <button
+            className="request__btn"
+            onClick={() => wcApproveSession(payload)}
+          >
             Connect
           </button>
         </div>

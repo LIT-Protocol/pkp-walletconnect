@@ -1,38 +1,39 @@
 import Link from 'next/link';
+import { useAppActions, useAppState } from '../context/AppContext';
+import { truncate, getChain } from '../utils/helpers';
 
-export default function SessionCard({ wcConnector, wcDisconnect }) {
+export default function SessionCard({ wcConnector }) {
+  const { appChains } = useAppState();
+  const { wcDisconnect } = useAppActions();
+  const peerMeta = wcConnector.peerMeta;
+  const chain = getChain(wcConnector.chainId, appChains);
+
   return (
     <div className="session-card">
       <div className="session-card__info">
-        {wcConnector.peerMeta?.icons.length > 0 && (
+        {peerMeta?.icons.length > 0 && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             className="session-card__icon"
-            src={wcConnector.peerMeta.icons[0]}
-            alt={
-              wcConnector.peerMeta.name
-                ? wcConnector.peerMeta.name
-                : 'Unknown app'
-            }
+            src={peerMeta.icons[0]}
+            alt={peerMeta.name ? peerMeta.name : 'Unknown app'}
           />
         )}
         <div>
-          <h4>
-            {wcConnector.peerMeta?.name
-              ? wcConnector.peerMeta.name
-              : 'Unknown app'}
-          </h4>
-          {/* <p>{wcConnector.peerMeta?.description}</p> */}
-          {wcConnector.peerMeta?.url ? (
-            // <a className="session-card__link" href={wcConnector.peerMeta.url}>
-            //   {wcConnector.peerMeta.url}
-            // </a>
-            <Link href={wcConnector.peerMeta.url} passHref legacyBehavior>
+          <div className="session-card__title">
+            <h4>{peerMeta?.name ? peerMeta.name : 'Unknown app'}</h4>
+            {chain && (
+              <span className="session-card__network">{chain.name}</span>
+            )}
+          </div>
+          {peerMeta?.url ? (
+            <Link href={peerMeta.url} passHref legacyBehavior>
               <a
                 target="_blank"
                 rel="noopener noreferrer"
                 className="session-card__link"
               >
-                {wcConnector.peerMeta.url}
+                {peerMeta.url}
               </a>
             </Link>
           ) : (
@@ -40,7 +41,10 @@ export default function SessionCard({ wcConnector, wcDisconnect }) {
           )}
         </div>
       </div>
-      <button className="session-card__btn" onClick={wcDisconnect}>
+      <button
+        className="session-card__btn"
+        onClick={() => wcDisconnect(wcConnector.peerId)}
+      >
         Disconnect
       </button>
     </div>

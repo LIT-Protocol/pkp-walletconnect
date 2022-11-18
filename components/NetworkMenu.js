@@ -1,8 +1,12 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { CheckIcon } from '@radix-ui/react-icons';
+import { useAppState, useAppActions } from '../context/AppContext';
 
-export default function NetworkMenu({ chainId, chains, handleSwitchChain }) {
-  const currentChain = chains.find(chain => chain.chainId === chainId);
+export default function NetworkMenu() {
+  const { appChainId, appChains } = useAppState();
+  const { handleSwitchChain } = useAppActions();
+
+  const currentChain = appChains.find(chain => chain.chainId === appChainId);
 
   return (
     <DropdownMenu.Root>
@@ -19,11 +23,11 @@ export default function NetworkMenu({ chainId, chains, handleSwitchChain }) {
           </DropdownMenu.Label>
 
           <DropdownMenu.RadioGroup
-            value={chainId}
+            value={appChainId}
             onValueChange={handleSwitchChain}
           >
-            {chains.length > 0 &&
-              chains.map((chain, index) => (
+            {appChains.length > 0 &&
+              appChains.map((chain, index) => (
                 <DropdownMenu.RadioItem
                   key={chain.chainId}
                   className="dropdownMenu__radio-item"

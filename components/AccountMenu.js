@@ -1,26 +1,26 @@
 import { truncate } from '../utils/helpers';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { CheckIcon } from '@radix-ui/react-icons';
+import { useAppState, useAppActions } from '../context/AppContext';
+import { useAccount } from 'wagmi';
 
-export default function AccountMenu({
-  ownerAddress,
-  address,
-  accounts,
-  handleSwitchAddress,
-  handleLogout,
-}) {
+export default function AccountMenu() {
+  const { address } = useAccount();
+  const { currentPKPAddress, pkpWallets } = useAppState();
+  const { handleSwitchAddress, handleLogout } = useAppActions();
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <span className="header__btn" aria-label="View account options">
-          {truncate(ownerAddress)}
+          {truncate(address)}
         </span>
       </DropdownMenu.Trigger>
 
       <DropdownMenu.Portal>
         <DropdownMenu.Content className="dropdownMenu__content" sideOffset={5}>
           <DropdownMenu.Label className="dropdownMenu__label">
-            Signed in as {truncate(ownerAddress)}
+            Signed in as {truncate(address)}
           </DropdownMenu.Label>
 
           <DropdownMenu.Separator className="dropdownMenu__separator" />
@@ -29,21 +29,21 @@ export default function AccountMenu({
             My cloud wallets
           </DropdownMenu.Label>
 
-          {accounts.length > 0 && (
+          {Object.keys(pkpWallets).length > 0 && (
             <DropdownMenu.RadioGroup
-              value={address}
+              value={currentPKPAddress}
               onValueChange={handleSwitchAddress}
             >
-              {accounts.map(account => (
+              {Object.keys(pkpWallets).map(pkpAddress => (
                 <DropdownMenu.RadioItem
-                  key={account.address}
+                  key={pkpAddress}
                   className="dropdownMenu__radio-item"
-                  value={account.address}
+                  value={pkpAddress}
                 >
                   <DropdownMenu.ItemIndicator className="dropdownMenu__itemIndicator">
                     <CheckIcon />
                   </DropdownMenu.ItemIndicator>
-                  {truncate(account.address)}
+                  {truncate(pkpAddress)}
                 </DropdownMenu.RadioItem>
               ))}
             </DropdownMenu.RadioGroup>

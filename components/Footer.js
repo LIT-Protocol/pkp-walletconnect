@@ -1,7 +1,14 @@
 import { useAccount } from 'wagmi';
+import { useAppState, useAppDispatch } from '../context/AppContext';
 
-export default function Footer({ tab, setTab }) {
+export default function Footer() {
   const { isConnected } = useAccount();
+  const { tab, wcRequests } = useAppState();
+  const dispatch = useAppDispatch();
+
+  function setTab(value) {
+    dispatch({ type: 'update_tab', tab: value });
+  }
 
   if (!isConnected) {
     return (
@@ -9,6 +16,10 @@ export default function Footer({ tab, setTab }) {
         <span className="footer__caption">Powered by Lit</span>
       </footer>
     );
+  }
+
+  if (wcRequests.length > 0) {
+    return null;
   }
 
   return (

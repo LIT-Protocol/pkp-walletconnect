@@ -1,40 +1,40 @@
-import WalletCard from '../WalletCard';
 import SessionCard from '../SessionCard';
-import ResultCard from '../ResultCard';
+import CopyBtn from '../CopyBtn';
+import { useAppState } from '../../context/AppContext';
+import { truncate } from '../../utils/helpers';
+import { useEffect } from 'react';
 
-export default function HomeTab({
-  currentPKP,
-  wcConnector,
-  wcResults,
-  wcDisconnect,
-}) {
+export default function HomeTab() {
+  const { currentPKPAddress, wcConnectors } = useAppState();
+
+  const currentConnectors = Object.values(wcConnectors).filter(
+    connector => connector.accounts[0] === currentPKPAddress
+  );
+
   return (
-    <div className="tab">
-      <WalletCard currentPKP={currentPKP} />
-
-      <div className="section">
-        <p className="section__title">Connected dapp</p>
-        {wcConnector?.connected ? (
-          <SessionCard wcConnector={wcConnector} wcDisconnect={wcDisconnect} />
-        ) : (
-          <div className="empty-state">
-            <p>No connected dapps</p>
+    <main className="container">
+      <div className="tab">
+        <div className="wallet-card">
+          <h4 className="subtitle">My cloud wallet</h4>
+          <div className="wallet-card__info">
+            <h1>{currentPKPAddress ? truncate(currentPKPAddress) : '...'}</h1>
+            {currentPKPAddress && <CopyBtn textToCopy={currentPKPAddress} />}
           </div>
-        )}
-      </div>
+        </div>
 
-      <div className="section">
-        <p className="section__title">Recent activity</p>
-        {Object.keys(wcResults).length > 0 ? (
-          Object.entries(wcResults).map((entry, index) => (
-            <ResultCard key={entry[0]} request={wcResults[entry[0]]} />
-          ))
-        ) : (
-          <div className="empty-state">
-            <p>No recent activity</p>
-          </div>
-        )}
+        <div className="section">
+          <h4 className="subtitle">Connected dapps</h4>
+          {currentConnectors.length > 0 ? (
+            currentConnectors.map(connector => (
+              <SessionCard key={connector.peerId} wcConnector={connector} />
+            ))
+          ) : (
+            <div className="empty-state">
+              <p>No connected dapps</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

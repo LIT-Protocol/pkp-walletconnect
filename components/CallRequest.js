@@ -5,18 +5,18 @@ import {
   convertHexToUtf8,
 } from '../utils/helpers';
 import { CodeBlock, codepen } from 'react-code-blocks';
+import { useAppState, useAppActions } from '../context/AppContext';
 
-export default function CallRequest({
-  wcPeerMeta,
-  wcRequest,
-  wcApproveRequest,
-  wcRejectRequest,
-}) {
-  const supported = isPayloadSupported(wcRequest);
+export default function CallRequest({ payload }) {
+  const { wcConnectors } = useAppState();
+  const { wcApproveRequest, wcRejectRequest } = useAppActions();
+  const wcConnector = wcConnectors[payload.peerId];
+  const wcPeerMeta = wcConnector.peerMeta;
+  const supported = isPayloadSupported(payload);
   let title;
   let description;
 
-  switch (wcRequest.method) {
+  switch (payload.method) {
     case 'eth_sign':
     case 'personal_sign':
       title = 'Sign message';
@@ -49,7 +49,7 @@ export default function CallRequest({
       break;
     default:
       title = 'Unsupported request';
-      description = `Unable to handle this request: ${wcRequest.method}.`;
+      description = `Unable to handle this request: ${payload.method}.`;
   }
 
   return (
@@ -57,38 +57,37 @@ export default function CallRequest({
       <div className="request">
         <div className="request__body">
           {wcPeerMeta?.icons.length > 0 && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               className="request__icon"
               src={wcPeerMeta.icons[0]}
               alt={wcPeerMeta?.name ? wcPeerMeta.name : 'unknown app'}
             />
           )}
-          <h2>{title}</h2>
+          <h2 className="request__title">{title}</h2>
           <p>{description}</p>
           <div className="section">
-            {wcRequest.method === 'eth_sign' && (
+            {payload.method === 'eth_sign' && (
+              <p className="request__message">{payload.params[1]}</p>
+            )}
+            {payload.method === 'personal_sign' && (
               <p className="request__message">
-                {convertHexToUtf8(wcRequest.params[1])}
+                {convertHexToUtf8(payload.params[0])}
               </p>
             )}
-            {wcRequest.method === 'personal_sign' && (
-              <p className="request__message">
-                {convertHexToUtf8(wcRequest.params[0])}
-              </p>
-            )}
-            {wcRequest.method.startsWith('eth_signTypedData') && (
+            {payload.method.startsWith('eth_signTypedData') && (
               <CodeBlock
                 showLineNumbers={false}
-                text={JSON.stringify(JSON.parse(wcRequest.params[1]), null, 2)}
+                text={JSON.stringify(JSON.parse(payload.params[1]), null, 2)}
                 theme={codepen}
                 language="json"
               />
             )}
-            {wcRequest.method === 'eth_signTransaction' && (
+            {payload.method === 'eth_signTransaction' && (
               <CodeBlock
                 showLineNumbers={false}
                 text={JSON.stringify(
-                  getTransactionToSign(wcRequest.params[0]),
+                  getTransactionToSign(payload.params[0], wcConnector.chainId),
                   null,
                   2
                 )}
@@ -96,11 +95,11 @@ export default function CallRequest({
                 language="json"
               />
             )}
-            {wcRequest.method === 'eth_sendTransaction' && (
+            {payload.method === 'eth_sendTransaction' && (
               <CodeBlock
                 showLineNumbers={false}
                 text={JSON.stringify(
-                  getTransactionToSend(wcRequest.params[0], chainId),
+                  getTransactionToSend(payload.params[0], wcConnector.chainId),
                   null,
                   2
                 )}
@@ -115,13 +114,13 @@ export default function CallRequest({
             <>
               <button
                 className="request__btn"
-                onClick={() => wcRejectRequest(wcRequest)}
+                onClick={() => wcRejectRequest(payload)}
               >
                 Reject
               </button>
               <button
                 className="request__btn"
-                onClick={() => wcApproveRequest(wcRequest)}
+                onClick={() => wcApproveRequest(payload)}
               >
                 Approve
               </button>
@@ -129,7 +128,7 @@ export default function CallRequest({
           ) : (
             <button
               className="request__btn"
-              onClick={() => wcRejectRequest(wcRequest)}
+              onClick={() => wcRejectRequest(payload)}
             >
               Dismiss
             </button>

@@ -230,6 +230,11 @@ body {
   }
 }
 
+.subtitle {
+  font-weight: normal;
+  color: gray;
+}
+
 .copy-btn {
   padding: 0.5rem;
   border: 1px solid #eeeeee;
@@ -267,7 +272,6 @@ body {
   padding: 1.5rem 1rem;
 
   &__prompt {
-    font-size: 0.875rem;
     text-align: center;
   }
 
@@ -405,10 +409,11 @@ body {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 1rem;
+  padding: 1rem 0.75rem;
   border: 1px solid #eeeeee;
   border-radius: 0.5rem;
   flex-wrap: wrap;
+  margin-top: 0.75rem;
 
   @media (min-width: $sm-breakpoint) {
     flex-wrap: nowrap;
@@ -433,20 +438,34 @@ body {
   }
 
   &__icon {
-    width: 3rem;
-    height: 3rem;
-
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 2rem;
     margin-right: 1rem;
-    border-radius: 0.25rem;
   }
 
   &__link {
     font-size: 0.875rem;
-    color: #4b5563;
+    color: gray;
   }
 
   &__no-link {
     font-size: 0.875rem;
+  }
+
+  &__title {
+    display: flex;
+    align-items: center;
+  }
+
+  &__network {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #eeeeee;
+    border-radius: 9999px;
+    font-size: 10px;
+    margin-left: 0.5rem;
+    color: #4b5563;
   }
 
   &__btn {
@@ -474,6 +493,7 @@ body {
   background-color: #f9fafb;
   color: #4b5563;
   text-align: center;
+  margin-top: 0.75rem;
 }
 
 .request-card {
@@ -486,12 +506,30 @@ body {
   margin-top: 0.5rem;
 
   &__title {
-    font-size: 0.875rem;
+    // font-size: 0.875rem;
+    font-weight: 400;
   }
 
   &__link {
+    font-size: 0.875rem;
+    color: gray;
+  }
+
+  &__app {
+    display: flex;
+    align-items: center;
     font-size: 0.75rem;
     color: #4b5563;
+    margin-top: 1rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #eeeeee;
+    border-radius: 1rem;
+  }
+
+  &__icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.25rem;
   }
 
   &__badge {
@@ -501,6 +539,7 @@ body {
     border-radius: 1rem;
     font-size: 0.75rem;
     margin-left: 0.5rem;
+    text-transform: capitalize;
 
     &--pending {
       color: #b45309;
@@ -547,6 +586,10 @@ body {
   display: flex;
   flex-direction: column;
 
+  &__title {
+    margin-bottom: 0.25rem;
+  }
+
   &__body {
     display: flex;
     flex-direction: column;
@@ -554,14 +597,15 @@ body {
   }
 
   &__icon {
-    width: 5rem;
-    height: 5rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1.5rem;
     @media (min-width: $sm-breakpoint) {
-      width: 6rem;
-      height: 6rem;
+      width: 4rem;
+      height: 4rem;
+      border-radius: 2rem;
     }
-    border-radius: 0.25rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   &__title {

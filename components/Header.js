@@ -17,16 +17,18 @@ const icon = (
   </svg>
 );
 
-export default function Header({ networkMenu, accountMenu }) {
+export default function Header() {
   const { isConnected } = useAccount();
 
-  if (isConnected) {
+  if (!isConnected) {
     return (
       <header className="header">
         {icon}
         <div className="header__row">
-          {networkMenu}
-          {accountMenu}
+          <div className="header__badge">
+            <span className="header__badge__status"></span>
+            Not connected
+          </div>
         </div>
       </header>
     );
@@ -36,10 +38,8 @@ export default function Header({ networkMenu, accountMenu }) {
     <header className="header">
       {icon}
       <div className="header__row">
-        <div className="header__badge">
-          <span className="header__badge__status"></span>
-          Not connected
-        </div>
+        <NetworkMenu />
+        <AccountMenu />
       </div>
     </header>
   );

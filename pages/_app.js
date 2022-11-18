@@ -5,6 +5,7 @@ import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
 import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 import '../styles/global.scss';
+import { AppProvider } from '../context/AppContext';
 
 // Configure chains & providers for wagmi
 const { chains, provider, webSocketProvider } = configureChains(
@@ -40,7 +41,9 @@ const client = createClient({
 export default function MyApp({ Component, pageProps }) {
   return (
     <WagmiConfig client={client}>
-      <Component {...pageProps} />
+      <AppProvider>
+        <Component {...pageProps} />
+      </AppProvider>
     </WagmiConfig>
   );
 }
