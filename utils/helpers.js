@@ -36,11 +36,11 @@ export function convertHexToUtf8(value) {
   return value;
 }
 
-export const getTransactionToSign = txParams => {
+export const getTransactionToSign = (txParams, chainId) => {
   let formattedTx = Object.assign({}, txParams);
 
   if (formattedTx.gas) {
-    formattedTx.gasLimit = formattedTx.gas;
+    // formattedTx.gasLimit = formattedTx.gas;
     delete formattedTx.gas;
   }
 
@@ -48,33 +48,41 @@ export const getTransactionToSign = txParams => {
     delete formattedTx.from;
   }
 
+  formattedTx.chainId = chainId;
+
   return formattedTx;
 };
 
 export const getTransactionToSend = (txParams, chainId) => {
   let formattedTx = getTransactionToSign(txParams);
 
-  if (formattedTx.gasPrice) {
-    delete formattedTx.gasPrice;
-  }
+  // if (formattedTx.gasPrice) {
+  //   delete formattedTx.gasPrice;
+  // }
 
-  formattedTx.value = txParams.value
-    ? txParams.value
-    : ethers.BigNumber.from('10');
+  // formattedTx.value = txParams.value
+  //   ? txParams.value
+  //   : ethers.BigNumber.from('10');
 
-  formattedTx.nonce = txParams.nonce;
+  // formattedTx.nonce = txParams.nonce;
 
-  formattedTx.maxFeePerGas = txParams.maxFeePerGas
-    ? txParams.maxFeePerGas
-    : ethers.BigNumber.from('3395000013');
+  // formattedTx.maxFeePerGas = txParams.maxFeePerGas
+  //   ? txParams.maxFeePerGas
+  //   : ethers.BigNumber.from('3395000013');
+  // if (formattedTx.maxFeePerGas) {
+  //   delete formattedTx.maxFeePerGas;
+  // }
 
-  formattedTx.maxPriorityFeePerGas = txParams.maxPriorityFeePerGas
-    ? txParams.maxPriorityFeePerGas
-    : ethers.BigNumber.from('3394999999');
+  // formattedTx.maxPriorityFeePerGas = txParams.maxPriorityFeePerGas
+  //   ? txParams.maxPriorityFeePerGas
+  //   : ethers.BigNumber.from('3394999999');
+  // if (formattedTx.maxPriorityFeePerGas) {
+  //   delete formattedTx.maxPriorityFeePerGas;
+  // }
 
   formattedTx.chainId = chainId;
 
-  formattedTx.type = 2;
+  // formattedTx.type = 2;
 
   return formattedTx;
 };
@@ -135,30 +143,13 @@ export const isPayloadSupported = payload => {
   return supportedMethods.includes(payload.method);
 };
 
-export const getPayloadName = payload => {
-  let name;
+export const getChain = (chainId, chains) => {
+  const chain = Object.values(chains).find(chain => chain.chainId === chainId);
+  return chain;
+};
 
-  switch (payload.method) {
-    case 'eth_sign':
-    case 'personal_sign':
-      name = 'Sign message';
-      break;
-    case 'eth_signTypedData':
-    case 'eth_signTypedData_v1':
-    case 'eth_signTypedData_v3':
-    case 'eth_signTypedData_v4':
-      name = 'Sign typed data';
-      break;
-    case 'eth_signTransaction':
-      name = 'Sign transaction';
-      break;
-    case 'eth_sendTransaction':
-      name = 'Send transaction';
-      break;
-    default:
-      name = `${payload.method} (unsupported)`;
-      break;
-  }
-
-  return name;
+export const getRPCUrl = (chainId, chains) => {
+  const chain = getChain(chainId, chains);
+  const rpcUrl = chain?.rpcUrls[0] ? chain.rpcUrls[0] : null;
+  return rpcUrl;
 };
