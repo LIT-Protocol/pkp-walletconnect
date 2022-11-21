@@ -6,7 +6,7 @@ import { useAccount } from 'wagmi';
 
 export default function AccountMenu() {
   const { address } = useAccount();
-  const { currentPKPAddress, pkpWallets } = useAppState();
+  const { currentPKPAddress, myPKPs } = useAppState();
   const { handleSwitchAddress, handleLogout } = useAppActions();
 
   return (
@@ -29,12 +29,12 @@ export default function AccountMenu() {
             My cloud wallets
           </DropdownMenu.Label>
 
-          {Object.keys(pkpWallets).length > 0 && (
+          {Object.keys(myPKPs).length > 0 && (
             <DropdownMenu.RadioGroup
               value={currentPKPAddress}
               onValueChange={handleSwitchAddress}
             >
-              {Object.keys(pkpWallets).map(pkpAddress => (
+              {Object.keys(myPKPs).map(pkpAddress => (
                 <DropdownMenu.RadioItem
                   key={pkpAddress}
                   className="dropdownMenu__radio-item"

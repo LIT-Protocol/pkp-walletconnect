@@ -1,23 +1,22 @@
 import { createContext, useContext, useEffect, useReducer } from 'react';
 import { useAccount, useSigner, useDisconnect } from 'wagmi';
-import appReducer from '../hooks/appReducer';
+import appReducer from '../reducers/appReducer';
 import WalletConnect from '@walletconnect/client';
 import LitJsSdk from 'lit-js-sdk';
+import { connectLitContracts, litContractsConnected } from '../utils/contracts';
+import { getRPCUrl, fetchPKPsByAddress } from '../utils/helpers';
 import {
-  connectLitContracts,
-  fetchPKPsByAddress,
-  litContractsConnected,
-} from '../utils/contracts';
-import PKPWalletController from '../utils/pkpWalletController';
-import { getChain, getRPCUrl } from '../utils/helpers';
-import { parseWalletConnectUri } from '@walletconnect/utils';
+  parseWalletConnectUri,
+  convertHexToNumber,
+} from '@walletconnect/utils';
 import {
   DEFAULT_CHAINS,
   DEFAULT_CHAIN_ID,
   PKPS_STORAGE_KEY,
   WC_RESULTS_STORAGE_KEY,
+  AUTH_SIG_STORAGE_KEY,
 } from '../utils/constants';
-import { ethers } from 'ethers';
+import { LitPKP } from 'lit-pkp-sdk';
 
 const INITIAL_APP_STATE = {
   loading: false,
@@ -26,7 +25,7 @@ const INITIAL_APP_STATE = {
   wcRequests: [],
   wcResults: {},
   currentPKPAddress: null,
-  pkpWallets: {},
+  myPKPs: {},
   appChainId: DEFAULT_CHAIN_ID,
   appChains: DEFAULT_CHAINS,
 };
@@ -41,15 +40,39 @@ export function AppProvider({ children }) {
   const { data: signer } = useSigner();
   const { disconnectAsync } = useDisconnect();
 
-  // app state
+  // App state
   const [state, dispatch] = useReducer(appReducer, INITIAL_APP_STATE);
 
+  // Get WalletConnect connector by peer ID
   function getWcConnector(peerId) {
     return state.wcConnectors[peerId];
   }
 
-  function getPKPWallet(address) {
-    return state.pkpWallets[address];
+  // Initialize PKP Wallet from PKP SDK
+  async function loadPKPWallet(address, chainId) {
+    const pkp = state.myPKPs[address];
+    if (!pkp) {
+      throw new Error('PKP not found');
+    }
+
+    const authSig = localStorage.getItem(AUTH_SIG_STORAGE_KEY);
+    if (!authSig) {
+      throw new Error('Auth signature not found');
+    }
+    const controllerAuthSig = JSON.parse(authSig);
+
+    const rpcUrl = getRPCUrl(chainId, state.appChains);
+    if (!rpcUrl) {
+      throw new Error('RPC URL not found');
+    }
+
+    const wallet = new LitPKP({
+      pkpPubKey: pkp.publicKey,
+      controllerAuthSig: controllerAuthSig,
+      provider: rpcUrl,
+    });
+    await wallet.init();
+    return wallet;
   }
 
   // Initialize WalletConnect connector
@@ -67,19 +90,20 @@ export function AppProvider({ children }) {
       storageId: `walletconnect_${key}`,
     });
 
+    console.log('Created connector', wcConnector);
+
     if (!wcConnector.connected) {
       await wcConnector.createSession();
     }
 
-    console.log('Created connector', wcConnector);
-
     if (wcConnector.peerId) {
       dispatch({
-        type: 'session_updated',
+        type: 'connector_updated',
         wcConnector: wcConnector,
       });
     }
 
+    // Subscribe to session requests
     wcConnector.on('session_request', (error, payload) => {
       console.log('On WalletConnect session_request', payload);
       if (error) {
@@ -92,6 +116,7 @@ export function AppProvider({ children }) {
       });
     });
 
+    // Subscribe to call requests
     wcConnector.on('call_request', async (error, payload) => {
       console.log('On WalletConnect call_request', payload);
       if (error) {
@@ -105,13 +130,26 @@ export function AppProvider({ children }) {
       });
     });
 
+    // Subscribe to connection events
     wcConnector.on('connect', (error, payload) => {
-      console.log('On WalletConnect connect');
+      console.log('On WalletConnect connect', payload);
       if (error) {
         throw error;
       }
       dispatch({
-        type: 'session_updated',
+        type: 'connector_updated',
+        wcConnector: wcConnector,
+      });
+    });
+
+    // Subscribe to disconnect events
+    wcConnector.on('disconnect', async (error, payload) => {
+      console.log('On WalletConnect disconnect', wcConnector);
+      if (error) {
+        throw error;
+      }
+      dispatch({
+        type: 'connector_disconnected',
         wcConnector: wcConnector,
       });
     });
@@ -119,16 +157,12 @@ export function AppProvider({ children }) {
 
   // Disconnect from WalletConnect client
   async function wcDisconnect(peerId) {
-    console.log('Disconnect from WalletConnect');
+    console.log('Disconnect from WalletConnect', peerId);
 
     try {
       const wcConnector = getWcConnector(peerId);
-      await wcConnector.killSession();
-      localStorage.removeItem(`walletconnect_${wcConnector.key}`);
-      dispatch({
-        type: 'session_removed',
-        peerId: peerId,
-      });
+      await wcConnector?.killSession();
+      localStorage.removeItem(`walletconnect_${wcConnector?.key}`);
     } catch (error) {
       console.error('Error trying to close WalletConnect session: ', error);
     }
@@ -182,7 +216,7 @@ export function AppProvider({ children }) {
         chainId: chainId,
       });
       dispatch({
-        type: 'session_updated',
+        type: 'connector_updated',
         wcConnector: wcConnector,
       });
     } catch (error) {
@@ -196,8 +230,10 @@ export function AppProvider({ children }) {
 
     const peerId = payload.peerId;
     const wcConnector = getWcConnector(peerId);
+    const wcChainId = wcConnector?.chainId;
     const pkpAddress = wcConnector.accounts[0];
-    const pkpWallet = getPKPWallet(pkpAddress);
+    const wallet = await loadPKPWallet(pkpAddress, wcChainId);
+
     let result;
 
     try {
@@ -210,30 +246,28 @@ export function AppProvider({ children }) {
         case 'eth_signTypedData_v4':
         case 'eth_signTransaction':
         case 'eth_sendTransaction':
-          // TODO: get wc connector chain id instead
-          result = await pkpWallet.handleJSONRPCCalls(
-            payload,
-            wcConnector.chainId
-          );
+          // Sign with PKP Wallet
+          result = await wallet.signEthereumRequests(payload);
           break;
         case 'wallet_addEthereumChain':
-          chainParams = payload.params[0];
-          addEthereumChain(chainParams);
+          // Add chain to list of supported chains
+          wcAddChain(payload.params[0]);
           result = null;
           break;
         case 'wallet_switchEthereumChain':
-          chainParams = payload.params[0];
-          await switchEthereumChain(peerId, pkpAddress, chainParams.chainId);
+          // Update WalletConnect session
+          const newChainId = convertHexToNumber(payload.params[0].chainId);
+          await wcSwitchChain(peerId, newChainId);
           result = null;
           break;
         default:
           throw new Error('Unsupported WalletConnect method');
       }
 
-      const wcResult = result.hash
-        ? result.hash
-        : result.raw
-        ? result.raw
+      const wcResult = result?.hash
+        ? result?.hash
+        : result?.raw
+        ? result?.raw
         : result;
 
       wcConnector.approveRequest({
@@ -246,7 +280,6 @@ export function AppProvider({ children }) {
         wcConnector: wcConnector,
         pkpAddress: pkpAddress,
         payload: payload,
-        status: 'success',
         result: result,
       });
     } catch (err) {
@@ -262,29 +295,27 @@ export function AppProvider({ children }) {
         wcConnector: wcConnector,
         pkpAddress: pkpAddress,
         payload: payload,
-        status: 'error',
         error: err,
       });
     }
   }
 
   // Add chain to list of app chains
-  function addEthereumChain(chainParams) {
+  function wcAddChain(chainParams) {
     const newChain = chainParams;
-    const network = state.appChains.find(
-      chain => chain.chainId === newChain.chainId
-    );
+    const newChainId = convertHexToNumber(newChain.chainId);
+    const network = state.appChains.find(chain => chain.chainId === newChainId);
     if (!network) {
       dispatch({ type: 'add_chain', chain: newChain });
     }
     return null;
   }
 
-  // Update WalletConnect session of given peer ID to use new chain ID
-  async function switchEthereumChain(peerId, pkpAddress, newChainId) {
+  // Update WalletConnect session to use new chain ID
+  async function wcSwitchChain(peerId, newChainId) {
     const network = state.appChains.find(chain => chain.chainId === newChainId);
     if (network) {
-      wcUpdateSession(peerId, pkpAddress, newChainId);
+      wcUpdateSession(peerId, state.currentPKPAddress, newChainId);
     } else {
       throw Error('Chain not supported');
     }
@@ -308,7 +339,6 @@ export function AppProvider({ children }) {
         wcConnector: wcConnector,
         pkpAddress: pkpAddress,
         payload: payload,
-        status: 'rejected',
         error: { message: 'User rejected WalletConnect request' },
       });
     } catch (error) {
@@ -319,8 +349,8 @@ export function AppProvider({ children }) {
     }
   }
 
+  // Use different PKP address
   async function handleSwitchAddress(newAddress) {
-    console.log('handleSwitchAddress', newAddress);
     const account = state.pkpWallets.find(
       account => account.address === newAddress
     );
@@ -331,42 +361,30 @@ export function AppProvider({ children }) {
     }
   }
 
+  // Update app chain ID
   async function handleSwitchChain(newChainId) {
-    console.log('handleSwitchChain', newChainId);
     if (newChainId === state.appChainId) {
       return;
     }
     const network = state.appChains.find(chain => chain.chainId === newChainId);
     if (network) {
-      const updatedWallets = { ...state.pkpWallets };
-      try {
-        const authSig = JSON.parse(localStorage.getItem('lit-auth-signature'));
-        const rpcUrl = getRPCUrl(newChainId, state.appChains);
-        Object.values(updatedWallets).map(async pkpWallet => {
-          await pkpWallet.initialize(authSig, rpcUrl);
-        });
-      } catch (error) {
-        console.error('Error trying to update PKPWallet chain ID:', error);
-      }
       dispatch({
-        type: 'chain_updated',
+        type: 'switch_chain',
         appChainId: newChainId,
-        pkpWallets: updatedWallets,
       });
     } else {
       throw Error('Chain not supported');
     }
   }
 
+  // Disconnect all WalletConnect sessions and wagmi connection, and reset state
   async function handleLogout() {
-    console.log('handleLogout');
-
     // Disconnect from all WalletConnect sessions
     const updatedConnectors = { ...state.wcConnectors };
     try {
       Object.values(updatedConnectors).map(async wcConnector => {
-        await wcConnector.killSession();
-        localStorage.removeItem(`walletconnect_${wcConnector.key}`);
+        await wcConnector?.killSession();
+        localStorage.removeItem(`walletconnect_${wcConnector?.key}`);
       });
     } catch (error) {
       console.error('Error trying to disconnect from WalletConnect: ', error);
@@ -376,7 +394,7 @@ export function AppProvider({ children }) {
     await disconnectAsync();
 
     // Remove data from local and session storage
-    localStorage.removeItem('lit-auth-signature');
+    localStorage.removeItem(AUTH_SIG_STORAGE_KEY);
     sessionStorage.removeItem(PKPS_STORAGE_KEY);
     localStorage.removeItem(WC_RESULTS_STORAGE_KEY);
 
@@ -398,52 +416,34 @@ export function AppProvider({ children }) {
     }
 
     if (address && signer) {
-      const authSig = localStorage.getItem('lit-auth-signature');
+      const authSig = localStorage.getItem(AUTH_SIG_STORAGE_KEY);
       if (!authSig) {
         getAuthSig(address, signer);
       }
     }
   }, [address, signer]);
 
-  // Fetch user's PKPs and initialize PKPWallets if there are any PKPs
+  // Fetch user's PKPs
   useEffect(() => {
-    async function fetchPKPs(address, appChainId, appChains) {
+    async function fetchPKPs(address) {
       dispatch({ type: 'fetching_pkps' });
 
+      // Check session storage for user's PKPs
       let myPKPs = JSON.parse(sessionStorage.getItem(PKPS_STORAGE_KEY));
-      if (!myPKPs || myPKPs.length === 0) {
+      if (!myPKPs || Object.values(myPKPs).length === 0) {
         myPKPs = await fetchPKPsByAddress(address);
         sessionStorage.setItem(PKPS_STORAGE_KEY, JSON.stringify(myPKPs));
       }
-      console.log('myPKPs ->', myPKPs);
 
       let currentPKPAddress = null;
-      let pkpWallets = {};
-      if (myPKPs && myPKPs.length > 0) {
-        currentPKPAddress = myPKPs[0].address;
-
-        // Get auth sig from local storage
-        const authSig = JSON.parse(localStorage.getItem('lit-auth-signature'));
-        const rpcUrl = getRPCUrl(appChainId, appChains);
-        for (let i = 0; i < myPKPs.length; i++) {
-          const pkp = myPKPs[i];
-          const pkpWallet = new PKPWalletController({
-            publicKey: pkp.publicKey,
-            address: pkp.address,
-            tokenId: pkp.tokenId,
-          });
-          await pkpWallet.initialize(authSig, rpcUrl);
-          pkpWallets = {
-            ...pkpWallets,
-            [pkp.address]: pkpWallet,
-          };
-        }
+      if (myPKPs && Object.values(myPKPs).length > 0) {
+        currentPKPAddress = Object.values(myPKPs)[0].address;
       }
 
       dispatch({
         type: 'pkps_fetched',
         currentPKPAddress: currentPKPAddress,
-        pkpWallets: pkpWallets,
+        myPKPs: myPKPs,
       });
     }
 
@@ -453,23 +453,16 @@ export function AppProvider({ children }) {
         connectLitContracts(signer);
       }
 
-      // Fetch user's PKPs and initialize PKPWallets
+      // Fetch user's PKPs
       if (!state.currentPKPAddress) {
-        fetchPKPs(address, state.appChainId, state.appChains);
+        fetchPKPs(address);
       }
     }
-  }, [
-    address,
-    signer,
-    state.currentPKPAddress,
-    state.appChainId,
-    state.appChains,
-  ]);
+  }, [address, signer, state.currentPKPAddress]);
 
   // Reconnect to WalletConnect sessions if exists in local storage
   useEffect(() => {
     async function restoreWcSessions(wcSessionKeys) {
-      console.log('Restoring WalletConnect sessions');
       wcSessionKeys.map(async sessionKey => {
         const sessionData = JSON.parse(localStorage.getItem(sessionKey));
         await wcConnect({ session: sessionData });
@@ -490,21 +483,17 @@ export function AppProvider({ children }) {
     }
   }, [state.currentPKPAddress, state.wcConnectors]);
 
-  // Reload call request results if found in local storage
+  // Reload sent transactions details if found in local storage
   useEffect(() => {
     async function restoreWcResults() {
-      const wcResults = JSON.parse(
-        localStorage.getItem(WC_RESULTS_STORAGE_KEY)
-      );
-      if (wcResults) {
-        dispatch({
-          type: 'restore_results',
-          wcResults: wcResults,
-        });
+      const storedResults = localStorage.getItem(WC_RESULTS_STORAGE_KEY);
+      if (storedResults) {
+        const results = JSON.parse(storedResults);
+        dispatch({ type: 'restore_results', wcResults: results });
       }
     }
 
-    if (Object.keys(state.wcResults).length === 0) {
+    if (state.wcResults && Object.keys(state.wcResults).length === 0) {
       restoreWcResults();
     }
   }, [state.wcResults]);
@@ -517,6 +506,7 @@ export function AppProvider({ children }) {
     wcUpdateSession,
     wcApproveRequest,
     wcRejectRequest,
+    wcSwitchChain,
     handleSwitchAddress,
     handleSwitchChain,
     handleLogout,

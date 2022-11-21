@@ -419,6 +419,22 @@ body {
     flex-wrap: nowrap;
   }
 
+  &__button {
+    padding: 0.25rem;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    background-color: $wallet-bg;
+    cursor: pointer;
+
+    &:hover {
+      border-color: #eeeeee;
+    }
+
+    &[data-state='open'] {
+      border-color: #eeeeee;
+    }
+  }
+
   &__info {
     display: flex;
     align-items: flex-start;
@@ -455,7 +471,7 @@ body {
 
   &__title {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
   }
 
   &__network {
@@ -612,8 +628,12 @@ body {
     margin-bottom: 0.5rem;
   }
 
-  .section {
-    margin-top: 1rem;
+  &__description {
+    margin-bottom: 1rem;
+  }
+
+  &__detail {
+    margin-bottom: 1rem;
   }
 
   &__footer {

@@ -13,6 +13,8 @@ export const DEFAULT_CHAINS = [
 
 export const PKPS_STORAGE_KEY = 'my_pkps';
 export const WC_RESULTS_STORAGE_KEY = 'pkp_wc_results';
+export const SENT_TXNS_STORAGE_KEY = 'pkp_sent_txns';
+export const AUTH_SIG_STORAGE_KEY = 'lit-auth-signature';
 
 export const PERSONAL_SIGN_CODE = `
   const go = async () => {

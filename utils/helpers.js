@@ -1,6 +1,7 @@
 import converter from 'hex2dec';
 import { ethers } from 'ethers';
-import { SignTypedDataVersion, TypedDataUtils } from '@metamask/eth-sig-util';
+import { convertHexToNumber } from '@walletconnect/utils';
+import { getPKPNFTTokenIdsByAddress, getPubkey } from './contracts';
 
 export const a11yProps = index => {
   return {
@@ -36,7 +37,7 @@ export function convertHexToUtf8(value) {
   return value;
 }
 
-export const getTransactionToSign = (txParams, chainId) => {
+export const getTransactionToSign = txParams => {
   let formattedTx = Object.assign({}, txParams);
 
   if (formattedTx.gas) {
@@ -48,108 +49,106 @@ export const getTransactionToSign = (txParams, chainId) => {
     delete formattedTx.from;
   }
 
-  formattedTx.chainId = chainId;
-
   return formattedTx;
-};
-
-export const getTransactionToSend = (txParams, chainId) => {
-  let formattedTx = getTransactionToSign(txParams);
-
-  // if (formattedTx.gasPrice) {
-  //   delete formattedTx.gasPrice;
-  // }
-
-  // formattedTx.value = txParams.value
-  //   ? txParams.value
-  //   : ethers.BigNumber.from('10');
-
-  // formattedTx.nonce = txParams.nonce;
-
-  // formattedTx.maxFeePerGas = txParams.maxFeePerGas
-  //   ? txParams.maxFeePerGas
-  //   : ethers.BigNumber.from('3395000013');
-  // if (formattedTx.maxFeePerGas) {
-  //   delete formattedTx.maxFeePerGas;
-  // }
-
-  // formattedTx.maxPriorityFeePerGas = txParams.maxPriorityFeePerGas
-  //   ? txParams.maxPriorityFeePerGas
-  //   : ethers.BigNumber.from('3394999999');
-  // if (formattedTx.maxPriorityFeePerGas) {
-  //   delete formattedTx.maxPriorityFeePerGas;
-  // }
-
-  formattedTx.chainId = chainId;
-
-  // formattedTx.type = 2;
-
-  return formattedTx;
-};
-
-export function getSignVersionEnum(str) {
-  switch (str) {
-    case 'v1':
-      return SignTypedDataVersion.V1;
-    case 'v3':
-      return SignTypedDataVersion.V3;
-    case 'v4':
-      return SignTypedDataVersion.V4;
-    default:
-      break;
-  }
-}
-
-export function getSignVersionByMessageFormat(data) {
-  // V1 format: name, type, value
-  // https://github.com/ethereum/EIPs/pull/712/commits/21abe254fe0452d8583d5b132b1d7be87c0439ca#diff-4a2296091e160bda9c4e9b47f34ea91420677e90d0454ededc48e31314d8642bR62
-  if (
-    data.length > 0 &&
-    data[0]['name'] &&
-    data[0]['type'] &&
-    data[0]['value']
-  ) {
-    return SignTypedDataVersion.V1;
-  } else {
-    // Use encodeData to check if message provided is suitable for V3 or V4
-    // https://github.com/MetaMask/eth-sig-util/blob/9f01c9d7922b717ddda3aa894c38fbba623e8bdf/src/sign-typed-data.ts#L193
-    try {
-      const { types, domain, primaryType, message } = JSON.parse(data);
-      delete types.EIP712Domain;
-      const encodedData = TypedDataUtils.encodeData(
-        primaryType,
-        message,
-        types,
-        SignTypedDataVersion.V4
-      );
-      return SignTypedDataVersion.V4;
-    } catch (e) {
-      return SignTypedDataVersion.V3;
-    }
-  }
-}
-
-export const isPayloadSupported = payload => {
-  const supportedMethods = [
-    'eth_sign',
-    'personal_sign',
-    'eth_signTypedData',
-    'eth_signTypedData_v1',
-    'eth_signTypedData_v3',
-    'eth_signTypedData_v4',
-    'eth_signTransaction',
-    'eth_sendTransaction',
-  ];
-  return supportedMethods.includes(payload.method);
 };
 
 export const getChain = (chainId, chains) => {
-  const chain = Object.values(chains).find(chain => chain.chainId === chainId);
-  return chain;
+  if (chainId) {
+    const chain = Object.values(chains).find(
+      chain => chain.chainId === chainId
+    );
+    return chain;
+  }
+  return null;
 };
 
 export const getRPCUrl = (chainId, chains) => {
-  const chain = getChain(chainId, chains);
-  const rpcUrl = chain?.rpcUrls[0] ? chain.rpcUrls[0] : null;
-  return rpcUrl;
+  if (chainId) {
+    const chain = getChain(chainId, chains);
+    const rpcUrl = chain?.rpcUrls[0] ? chain.rpcUrls[0] : null;
+    return rpcUrl;
+  }
+  return null;
+};
+
+export const renderRequest = (payload, peerMeta, chains) => {
+  let title;
+  let description;
+  let message;
+  let data;
+
+  const appName = peerMeta?.name ? peerMeta.name : 'An unknown app';
+
+  switch (payload.method) {
+    case 'eth_sign':
+      title = 'Sign message';
+      description = `${appName} wants you to sign the following message:`;
+      message = payload.params[1];
+      break;
+    case 'personal_sign':
+      title = 'Sign message';
+      description = `${appName} wants you to sign the following message:`;
+      message = convertHexToUtf8(payload.params[0]);
+      break;
+    case 'eth_signTypedData':
+    case 'eth_signTypedData_v1':
+    case 'eth_signTypedData_v3':
+    case 'eth_signTypedData_v4':
+      title = 'Sign typed data';
+      description = `${appName} wants you to sign the following typed data:`;
+      data = JSON.stringify(JSON.parse(payload.params[1]), null, 2);
+      break;
+    case 'eth_signTransaction':
+      title = 'Sign transaction';
+      description = `${appName} 
+      wants you to sign the following transaction:`;
+      data = JSON.stringify(getTransactionToSign(payload.params[0]), null, 2);
+      break;
+    case 'eth_sendTransaction':
+      title = 'Send transaction';
+      description = `${appName} 
+      wants you to sign and send the following transaction:`;
+      data = JSON.stringify(getTransactionToSign(payload.params[0]), null, 2);
+      break;
+    case 'wallet_addEthereumChain':
+      title = 'Add network';
+      description = `${appName} 
+      wants you to add the following network:`;
+      data = JSON.stringify(payload.params[0], null, 2);
+      break;
+    case 'wallet_switchEthereumChain':
+      title = 'Switch network';
+      description = `${appName} 
+      wants you to switch to the following network:`;
+      const newChainId = convertHexToNumber(payload.params[0].chainId);
+      const newChain = getChain(newChainId, chains);
+      data = JSON.stringify(newChain, null, 2);
+      break;
+    default:
+      title = 'Unsupported request';
+      description = `Unable to handle this request: ${payload.method}.`;
+      data = params;
+  }
+
+  return { title, description, message, data };
+};
+
+// Fetch PKPs by address
+export const fetchPKPsByAddress = async address => {
+  const tokenIds = await getPKPNFTTokenIdsByAddress(address);
+  let pkps = {};
+
+  if (tokenIds.length > 0) {
+    for (let i = 0; i < tokenIds.length; i++) {
+      const pubkey = await getPubkey(tokenIds[i]);
+      const ethAddress = ethers.utils.computeAddress(pubkey);
+      pkps[ethAddress] = {
+        tokenId: tokenIds[i],
+        publicKey: pubkey,
+        address: ethAddress,
+      };
+    }
+  }
+
+  return pkps;
 };

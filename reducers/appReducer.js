@@ -1,3 +1,5 @@
+import { WC_RESULTS_STORAGE_KEY } from '../utils/constants';
+
 // const INITIAL_APP_STATE = {
 //   loading: false,
 //   tab: 1,
@@ -5,14 +7,12 @@
 //   wcRequests: [],
 //   wcResults: {},
 //   currentPKPAddress: null,
-//   pkpWallets: {},
+//   myPKPs: {},
 //   appChainId: DEFAULT_CHAIN_ID,
 //   appChains: DEFAULT_CHAINS,
 // };
 
 export default function appReducer(state, action) {
-  console.log('APP REDUCER -', action);
-
   switch (action.type) {
     case 'update_tab': {
       return {
@@ -43,7 +43,7 @@ export default function appReducer(state, action) {
         ...state,
         loading: false,
         currentPKPAddress: action.currentPKPAddress,
-        pkpWallets: action.pkpWallets,
+        myPKPs: action.myPKPs,
       };
     }
     case 'restore_results': {
@@ -61,10 +61,9 @@ export default function appReducer(state, action) {
         currentPKPAddress: action.currentPKPAddress,
       };
     }
-    case 'chain_updated': {
+    case 'switch_chain': {
       return {
         ...state,
-        pkpWallets: action.pkpWallets,
         appChainId: action.appChainId,
       };
     }
@@ -75,7 +74,7 @@ export default function appReducer(state, action) {
         appChains: updatedChains,
       };
     }
-    case 'session_updated': {
+    case 'connector_updated': {
       const updatedConnectors = updateWcConnector(
         action.wcConnector,
         state.wcConnectors
@@ -85,19 +84,14 @@ export default function appReducer(state, action) {
         wcConnectors: updatedConnectors,
       };
     }
-    case 'session_removed': {
-      const updatedConnectors = removeWcConnectorByPeerId(
-        action.peerId,
+    case 'connector_disconnected': {
+      const filteredConnectors = removeWcConnector(
+        action.wcConnector,
         state.wcConnectors
-      );
-      const updatedRequests = filterWcRequestByPeerId(
-        action.peerId,
-        state.wcRequests
       );
       return {
         ...state,
-        wcConnectors: updatedConnectors,
-        wcRequests: updatedRequests,
+        wcConnectors: filteredConnectors,
       };
     }
     case 'pending_request': {
@@ -135,7 +129,6 @@ export default function appReducer(state, action) {
         pkpAddress: action.pkpAddress,
         peerMeta: action.wcConnector.peerMeta,
         payload: action.payload,
-        status: action.status,
         result: action.result,
         error: action.error,
         wcResults: state.wcResults,
@@ -154,14 +147,6 @@ export default function appReducer(state, action) {
   }
 }
 
-function addPKPWallet(pkpWallet, pkpWallets) {
-  const updatedPKPWallets = {
-    ...pkpWallets,
-    [pkpWallet.address]: pkpWallet,
-  };
-  return updatedPKPWallets;
-}
-
 function addChain(chain, chains) {
   const updatedChains = [...chains, chain];
   return updatedChains;
@@ -175,10 +160,19 @@ function updateWcConnector(wcConnector, wcConnectors) {
   return updatedConnectors;
 }
 
-function removeWcConnectorByPeerId(peerId, wcConnectors) {
-  const filteredConnectors = wcConnectors;
-  if (filteredConnectors[peerId]) {
-    delete filteredConnectors[peerId];
+function removeWcConnector(wcConnector, wcConnectors) {
+  let filteredConnectors = wcConnectors;
+  const connectorToRemove = Object.values(wcConnectors).find(
+    connector => connector.peerMeta?.url === wcConnector.peerMeta?.url
+  );
+  if (connectorToRemove && connectorToRemove.peerMeta?.url) {
+    Object.keys(filteredConnectors).forEach(key => {
+      if (
+        filteredConnectors[key].peerMeta?.url === connectorToRemove.peerMeta.url
+      ) {
+        delete filteredConnectors[key];
+      }
+    });
   }
   return filteredConnectors;
 }
@@ -195,18 +189,10 @@ function removeWcRequest(payload, wcRequests) {
   return filteredRequests;
 }
 
-function filterWcRequestByPeerId(peerId, wcRequests) {
-  const filteredRequests = wcRequests.filter(
-    request => request.peerId !== peerId
-  );
-  return filteredRequests;
-}
-
 function updateResults({
   pkpAddress,
   peerMeta,
   payload,
-  status,
   result,
   error,
   wcResults,
@@ -214,25 +200,23 @@ function updateResults({
   const newResult = {
     peerMeta: peerMeta,
     payload: payload,
-    status: status,
     result: result,
-    error: error,
   };
 
   let updatedResults = wcResults;
-  if (updatedResults[pkpAddress]) {
-    updatedResults[pkpAddress] = [newResult, ...updatedResults[pkpAddress]];
-  } else {
-    updatedResults = {
-      ...updatedResults,
-      [pkpAddress]: [newResult],
-    };
+  // Save only successfully sent transactions
+  if (payload?.method === 'eth_sendTransaction' && result && !error) {
+    if (updatedResults[pkpAddress]) {
+      updatedResults[pkpAddress] = [newResult, ...updatedResults[pkpAddress]];
+    } else {
+      updatedResults = {
+        ...updatedResults,
+        [pkpAddress]: [newResult],
+      };
+    }
   }
 
-  localStorage.setItem(
-    'WC_RESULTS_STORAGE_KEY',
-    JSON.stringify(updatedResults)
-  );
+  localStorage.setItem(WC_RESULTS_STORAGE_KEY, JSON.stringify(updatedResults));
 
   return updatedResults;
 }

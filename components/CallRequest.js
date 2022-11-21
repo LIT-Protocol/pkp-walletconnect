@@ -1,56 +1,24 @@
-import {
-  getTransactionToSign,
-  getTransactionToSend,
-  isPayloadSupported,
-  convertHexToUtf8,
-} from '../utils/helpers';
+import { getChain, renderRequest, truncate } from '../utils/helpers';
 import { CodeBlock, codepen } from 'react-code-blocks';
 import { useAppState, useAppActions } from '../context/AppContext';
+import { isSignRequestSupported } from 'lit-pkp-sdk';
 
 export default function CallRequest({ payload }) {
-  const { wcConnectors } = useAppState();
+  const { wcConnectors, appChains } = useAppState();
   const { wcApproveRequest, wcRejectRequest } = useAppActions();
   const wcConnector = wcConnectors[payload.peerId];
-  const wcPeerMeta = wcConnector.peerMeta;
-  const supported = isPayloadSupported(payload);
-  let title;
-  let description;
-
-  switch (payload.method) {
-    case 'eth_sign':
-    case 'personal_sign':
-      title = 'Sign message';
-      description = `${
-        wcPeerMeta && wcPeerMeta.name ? wcPeerMeta.name : 'An unknown app'
-      } wants you to sign the following message:`;
-      break;
-    case 'eth_signTypedData':
-    case 'eth_signTypedData_v1':
-    case 'eth_signTypedData_v3':
-    case 'eth_signTypedData_v4':
-      title = 'Sign typed data';
-      description = `${
-        wcPeerMeta && wcPeerMeta.name ? wcPeerMeta.name : 'An unidentified app'
-      } wants you to sign the following typed data:`;
-      break;
-    case 'eth_signTransaction':
-      title = 'Sign transaction';
-      description = `${
-        wcPeerMeta && wcPeerMeta.name ? wcPeerMeta.name : 'An unknown app'
-      } 
-      wants you to sign the following transaction:`;
-      break;
-    case 'eth_sendTransaction':
-      title = 'Send transaction';
-      description = `${
-        wcPeerMeta && wcPeerMeta.name ? wcPeerMeta.name : 'An unknown app'
-      } 
-      wants you to approve the following transaction:`;
-      break;
-    default:
-      title = 'Unsupported request';
-      description = `Unable to handle this request: ${payload.method}.`;
-  }
+  const address = wcConnector?.accounts[0];
+  const chain = getChain(wcConnector?.chainId, appChains);
+  const wcPeerMeta = wcConnector?.peerMeta;
+  const supported =
+    isSignRequestSupported(payload) ||
+    payload.method === 'wallet_addEthereumChain' ||
+    payload.method === 'wallet_switchEthereumChain';
+  const { title, description, message, data } = renderRequest(
+    payload,
+    wcPeerMeta,
+    appChains
+  );
 
   return (
     <main className="container">
@@ -65,50 +33,50 @@ export default function CallRequest({ payload }) {
             />
           )}
           <h2 className="request__title">{title}</h2>
-          <p>{description}</p>
-          <div className="section">
-            {payload.method === 'eth_sign' && (
-              <p className="request__message">{payload.params[1]}</p>
-            )}
-            {payload.method === 'personal_sign' && (
-              <p className="request__message">
-                {convertHexToUtf8(payload.params[0])}
-              </p>
-            )}
-            {payload.method.startsWith('eth_signTypedData') && (
+          <p className="request__description">{description}</p>
+          {(payload.method === 'eth_sign' ||
+            payload.method === 'personal_sign') && (
+            <div className="request__detail">
+              <h4 className="subtitle">Message</h4>
+              <p className="request__message">{message}</p>
+            </div>
+          )}
+          {(payload.method.startsWith('eth_signTypedData') ||
+            payload.method === 'eth_signTransaction' ||
+            payload.method === 'eth_sendTransaction' ||
+            payload.method === 'wallet_addEthereumChain' ||
+            payload.method === 'wallet_switchEthereumChain') && (
+            <div className="request__detail">
+              <h4 className="subtitle">
+                {payload.method.startsWith('eth_signTypedData')
+                  ? 'Data'
+                  : payload.method.startsWith('wallet_')
+                  ? 'Network'
+                  : 'Transaction'}
+              </h4>
               <CodeBlock
+                className="request__data"
                 showLineNumbers={false}
-                text={JSON.stringify(JSON.parse(payload.params[1]), null, 2)}
+                text={data}
                 theme={codepen}
                 language="json"
               />
-            )}
-            {payload.method === 'eth_signTransaction' && (
-              <CodeBlock
-                showLineNumbers={false}
-                text={JSON.stringify(
-                  getTransactionToSign(payload.params[0], wcConnector.chainId),
-                  null,
-                  2
-                )}
-                theme={codepen}
-                language="json"
-              />
-            )}
-            {payload.method === 'eth_sendTransaction' && (
-              <CodeBlock
-                showLineNumbers={false}
-                text={JSON.stringify(
-                  getTransactionToSend(payload.params[0], wcConnector.chainId),
-                  null,
-                  2
-                )}
-                theme={codepen}
-                language="json"
-              />
-            )}
-          </div>
+            </div>
+          )}
+          {address && (
+            <div className="request__detail">
+              <h4 className="subtitle">Account</h4>
+              <p>{truncate(address)}</p>
+            </div>
+          )}
+          {chain && (
+            <div className="request__detail">
+              <h4 className="subtitle">Network</h4>
+              <p>{chain.name}</p>
+            </div>
+          )}
         </div>
+
         <div className="request__footer">
           {supported ? (
             <>

@@ -1,12 +1,23 @@
 import Link from 'next/link';
 import { useAppActions, useAppState } from '../context/AppContext';
 import { truncate, getChain } from '../utils/helpers';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { CheckIcon, DotsVerticalIcon } from '@radix-ui/react-icons';
 
 export default function SessionCard({ wcConnector }) {
   const { appChains } = useAppState();
-  const { wcDisconnect } = useAppActions();
+  const { wcSwitchChain, wcDisconnect } = useAppActions();
   const peerMeta = wcConnector.peerMeta;
   const chain = getChain(wcConnector.chainId, appChains);
+
+  async function updateWcChain(chainId) {
+    console.log('updateWcChain', chainId);
+    await wcSwitchChain(wcConnector.peerId, chainId);
+  }
+
+  async function handleDisconnect() {
+    await wcDisconnect(wcConnector.peerId);
+  }
 
   return (
     <div className="session-card">
@@ -41,12 +52,77 @@ export default function SessionCard({ wcConnector }) {
           )}
         </div>
       </div>
-      <button
+      {/* <button
         className="session-card__btn"
         onClick={() => wcDisconnect(wcConnector.peerId)}
       >
         Disconnect
-      </button>
+      </button> */}
+      <SessionOptions
+        currentChainId={wcConnector.chainId}
+        appChains={appChains}
+        updateWcChain={updateWcChain}
+        handleDisconnect={handleDisconnect}
+      />
     </div>
+  );
+}
+
+function SessionOptions({
+  appChains,
+  currentChainId,
+  updateWcChain,
+  handleDisconnect,
+}) {
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button
+          className="session-card__button"
+          aria-label="Update WalletConnect session"
+        >
+          <DotsVerticalIcon />
+        </button>
+      </DropdownMenu.Trigger>
+
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content className="dropdownMenu__content" sideOffset={5}>
+          <DropdownMenu.Label className="dropdownMenu__label">
+            Networks
+          </DropdownMenu.Label>
+
+          {Object.keys(appChains).length > 0 && (
+            <DropdownMenu.RadioGroup
+              value={currentChainId}
+              onValueChange={updateWcChain}
+            >
+              {Object.values(appChains).map(chain => (
+                <DropdownMenu.RadioItem
+                  key={`chain_${chain.chainId}`}
+                  className="dropdownMenu__radio-item"
+                  value={chain.chainId}
+                >
+                  <DropdownMenu.ItemIndicator className="dropdownMenu__itemIndicator">
+                    <CheckIcon />
+                  </DropdownMenu.ItemIndicator>
+                  {chain.name}
+                </DropdownMenu.RadioItem>
+              ))}
+            </DropdownMenu.RadioGroup>
+          )}
+
+          <DropdownMenu.Separator className="dropdownMenu__separator" />
+
+          <DropdownMenu.Item
+            className="dropdownMenu__item"
+            onClick={handleDisconnect}
+          >
+            Disconnect
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Arrow className="dropdownMenu__arrow" />
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
   );
 }

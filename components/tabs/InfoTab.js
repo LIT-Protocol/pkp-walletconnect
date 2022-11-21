@@ -5,8 +5,8 @@ import { useAppState } from '../../context/AppContext';
 import ContractAddresses from '../../utils/abis/deployed-contracts.json';
 
 export default function InfoTab() {
-  const { currentPKPAddress, pkpWallets } = useAppState();
-  const currentPKP = pkpWallets[currentPKPAddress];
+  const { currentPKPAddress, myPKPs } = useAppState();
+  const currentPKP = myPKPs[currentPKPAddress];
 
   return (
     <main className="container">

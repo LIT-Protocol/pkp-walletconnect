@@ -1,12 +1,11 @@
-import { useState } from 'react';
 import { useAccount } from 'wagmi';
+import { useAppState } from '../context/AppContext';
 import useHasMounted from '../hooks/useHasMounted';
 import MintPKP from '../components/MintPKP';
 import ConnectTab from '../components/tabs/ConnectTab';
 import SessionRequest from '../components/SessionRequest';
 import CallRequest from '../components/CallRequest';
 import ConnectWallet from '../components/ConnectWallet';
-import { useAppDispatch, useAppState } from '../context/AppContext';
 import Loading from '../components/Loading';
 import Layout from '../components/Layout';
 import HomeTab from '../components/tabs/HomeTab';
@@ -19,10 +18,8 @@ export default function Home() {
 
   // app state
   const state = useAppState();
-  const dispatch = useAppDispatch();
 
   // ui state
-  const [tab, setTab] = useState(1);
   const hasMounted = useHasMounted();
 
   if (!hasMounted) {

@@ -86,26 +86,6 @@ export const getPKPNFTTokenIdsByAddress = async address => {
   return tokens;
 };
 
-// Fetch PKPs by address
-export const fetchPKPsByAddress = async address => {
-  const tokenIds = await getPKPNFTTokenIdsByAddress(address);
-  let pkps = [];
-
-  if (tokenIds.length > 0) {
-    for (let i = 0; i < tokenIds.length; i++) {
-      const pubkey = await getPubkey(tokenIds[i]);
-      const ethAddress = ethers.utils.computeAddress(pubkey);
-      pkps.push({
-        tokenId: tokenIds[i],
-        publicKey: pubkey,
-        address: ethAddress,
-      });
-    }
-  }
-
-  return pkps;
-};
-
 export const getMintCost = async () => {
   if (!pkpContract) {
     throw new Error('Unable to connect to PKPNFT contract');

@@ -14,7 +14,6 @@ export default function ResultCard({ resultData }) {
       blockExplorerUrl = chain.blockExplorerUrls[0];
     }
   }
-  console.log('blockExplorerUrl', blockExplorerUrl);
 
   let title;
 
@@ -46,7 +45,7 @@ export default function ResultCard({ resultData }) {
         <h4 className="request-card__title">{title}</h4>
         {blockExplorerUrl && (
           <Link
-            href={`${blockExplorerUrl}tx/${resultData.result.hash}`}
+            href={`${blockExplorerUrl}/tx/${resultData.result.hash}`}
             passHref
             legacyBehavior
           >
