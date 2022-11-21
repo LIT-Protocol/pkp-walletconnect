@@ -247,7 +247,7 @@ export function AppProvider({ children }) {
         case 'eth_signTransaction':
         case 'eth_sendTransaction':
           // Sign with PKP Wallet
-          result = await wallet.signEthereumRequests(payload);
+          result = await wallet.signEthereumRequest(payload);
           break;
         case 'wallet_addEthereumChain':
           // Add chain to list of supported chains
