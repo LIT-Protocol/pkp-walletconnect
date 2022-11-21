@@ -11,6 +11,7 @@ import Layout from '../components/Layout';
 import HomeTab from '../components/tabs/HomeTab';
 import ActivityTab from '../components/tabs/ActivityTab';
 import InfoTab from '../components/tabs/InfoTab';
+import Head from 'next/head';
 
 export default function Home() {
   // wagmi
@@ -32,6 +33,9 @@ export default function Home() {
 
   return (
     <Layout>
+      <Head>
+        <title>PKP WalletConnect</title>
+      </Head>
       {state.loading ? (
         <Loading />
       ) : state.currentPKPAddress ? (
