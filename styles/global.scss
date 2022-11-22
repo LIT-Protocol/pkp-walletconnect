@@ -29,7 +29,7 @@ body {
   border-radius: 0.5rem;
   width: 100%;
   height: 100%;
-  max-height: calc(100vh - 2rem);
+  max-height: 768px;
   max-width: $max-width;
   margin: auto;
   box-shadow: 0 1px 1px hsl(0deg 0% 0% / 0.075),
