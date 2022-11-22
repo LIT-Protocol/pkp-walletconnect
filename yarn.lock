@@ -5107,10 +5107,10 @@ lit-js-sdk@^1.2.24, lit-js-sdk@^1.2.32, lit-js-sdk@^1.2.36:
     tweetnacl-util "^0.15.1"
     utf-8-validate "^5.0.8"
 
-lit-pkp-sdk@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/lit-pkp-sdk/-/lit-pkp-sdk-1.0.2.tgz#cd26ffc81b47ca9b1b0f0d08559e001e9d5667e7"
-  integrity sha512-iImNu3x5q54EH+hVxIu0S3/oMEbuNmis/0+6hsf6xWvLZ49Ws3zgqIjTu0MvK7ORCL+bTYBujbn1mUoRjMJU/g==
+lit-pkp-sdk@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/lit-pkp-sdk/-/lit-pkp-sdk-1.0.3.tgz#6266981b905b4068f75bac2727ccf68c2d5c6131"
+  integrity sha512-fhC1151RwkpcGLNaAyyTEkInncrsz6lkBew7a1zQ51m67G3lKHYlkTAhBbAeSLZFcs17vxHqHzRHCOrFjYXMbg==
   dependencies:
     "@ethersproject/bytes" "^5.7.0"
     "@metamask/eth-sig-util" "^5.0.2"
