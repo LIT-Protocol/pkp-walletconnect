@@ -6,7 +6,7 @@ To enable secure communication between a PKP and a dApp, all you need to do is:
 2. Establish a WalletConnect connection
 3. Subscribe and respond to events
 
-Note: This guide requires a PKP. To mint a PKP NFT, visit the [Lit Explorer](https://explorer.litprotocol.com/mint-pkp). You'll need some [test Matic](https://faucet.polygon.technology/) on your wallet.
+Note: This guide requires a PKP. To mint a PKP NFT, visit the [Lit Explorer](https://explorer.litprotocol.com/mint-pkp). You'll need some [test Matic](https://faucet.polygon.technology/) in your wallet.
 
 </br>
 
@@ -48,7 +48,7 @@ await wallet.init();
 
 ## Initializing a WalletConnect connector
 
-To create a WalletConnect connector that will interact with a dApp, you'll need a `uri` from a dApp. You can get a `uri` by visiting to this [example dApp](https://example.walletconnect.org/), tapping 'Connect to WalletConnect' button, and copying the QR code to your clipboard.
+To create a WalletConnect connector that will interact with a dApp, you'll need a `uri` from a dApp. You can get a `uri` by visiting this [example dApp](https://example.walletconnect.org/), tapping 'Connect to WalletConnect' button, and copying the QR code to your clipboard.
 
 ```jsx
 import WalletConnect from '@walletconnect/client';
@@ -253,9 +253,9 @@ This repo uses React Context and `useReducer` hook to manage state as seen here 
 
 ## WalletConnect V1 vs V2
 
-This repo uses WalletConnect V1, which will be deprecated in March 1, 2023. You can find more information about the deprecation [here](https://medium.com/walletconnect/walletconnect-v1-0-sunset-notice-and-migration-schedule-8af9d3720d2e).
+This repo uses WalletConnect V1, which will be deprecated on March 1, 2023. You can find more information about the deprecation [here](https://medium.com/walletconnect/walletconnect-v1-0-sunset-notice-and-migration-schedule-8af9d3720d2e).
 
-At the time of developing the Lit PKP x WalletConnect example, many production and test dApps are still using WalletConnect V1. Since WalletConnect V2 is not backwards-compatible with V1, you may need to support both versions in your app.
+At the time of developing the Lit PKP x WalletConnect example, many production and test dApps are still using WalletConnect V1. Since WalletConnect V2 is not backward-compatible with V1, you may need to support both versions in your app.
 
 The [WalletConnect migration guide](https://docs.walletconnect.com/2.0/advanced/migrating-from-v1.0) notes major changes. One notable change is that a single WalletConnect client can manage multiple sessions. This means you no longer need to create a new connector for each dApp as seen in the examples using WalletConnect V1.
 
@@ -267,6 +267,6 @@ The [WalletConnect migration guide](https://docs.walletconnect.com/2.0/advanced/
 
 # Time to build
 
-Now that you've learned how to integrate Lit Protocol and WalletConnect, it's time to build your own apps that leverage Lit Protocol's powerful decentralized key management network. Find inspiration [here](https://github.com/LIT-Protocol/awesome/blob/main/README.md) and learn more about our grants [here](https://developer.litprotocol.com/ecosystem/litgrants/).
+Now that you've learned how to integrate Lit Protocol and WalletConnect, it's time to build your apps that leverage Lit Protocol's powerful decentralized key management network. Find inspiration [here](https://github.com/LIT-Protocol/awesome/blob/main/README.md) and learn more about our grants [here](https://developer.litprotocol.com/ecosystem/litgrants/).
 
 If you run into any issues, feel free to reach out to us on [Discord](https://litgateway.com/discord).
