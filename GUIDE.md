@@ -217,7 +217,9 @@ connector.killSession();
 
 ---
 
-## Testing your app
+</br>
+
+# Testing your app
 
 To test your Lit and WalletConnect integration, you can connect your PKP to these testnet dApps:
 
@@ -232,6 +234,8 @@ Add test tokens to your PKP using these faucets:
 - [Ethereum Goerli faucet](https://goerlifaucet.com/)
 
 PKPs are still in development on the Serrano Testnet, so do **not** store anything of value on your PKPs at this time.
+
+</br>
 
 ---
 
