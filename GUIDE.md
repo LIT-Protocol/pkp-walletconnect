@@ -217,6 +217,24 @@ connector.killSession();
 
 ---
 
+## Testing your app
+
+To test your Lit and WalletConnect integration, you can connect your PKP to these testnet dApps:
+
+- [WalletConnect V1 example dapp](https://example.walletconnect.org/)
+- [Opensea testnet dapp](https://testnets.opensea.io/)
+- [Zora testnet dapp](https://testnet.create.zora.co/)
+- [Aave testnet dapp](https://staging.aave.com/)
+
+Add test tokens to your PKP using these faucets:
+
+- [Polygon Matic faucet](https://faucet.polygon.technology/)
+- [Ethereum Goerli faucet](https://goerlifaucet.com/)
+
+PKPs are still in development on the Serrano Testnet, so do **not** store anything of value on your PKPs at this time.
+
+---
+
 </br>
 
 # Things to note
@@ -257,7 +275,9 @@ This repo uses WalletConnect V1, which will be deprecated on March 1, 2023. You 
 
 At the time of developing the Lit PKP x WalletConnect example, many production and test dApps are still using WalletConnect V1. Since WalletConnect V2 is not backward-compatible with V1, you may need to support both versions in your app.
 
-The [WalletConnect migration guide](https://docs.walletconnect.com/2.0/advanced/migrating-from-v1.0) notes major changes. One notable change is that a single WalletConnect client can manage multiple sessions. This means you no longer need to create a new connector for each dApp as seen in the examples using WalletConnect V1.
+To tell which version the dApp is using, look at the dApp's WalletConnect URI. V1 URI will have a `bridge` parameter, while V2 URI will have a `relay-protocol` parameter.
+
+Noted in the [migration guide](https://docs.walletconnect.com/2.0/advanced/migrating-from-v1.0), one major change in WalletConnect V2 is that a single WalletConnect client can manage multiple sessions. This means you no longer need to create a new connector for each dApp as seen in the examples using WalletConnect V1.
 
 </br>
 
