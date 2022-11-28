@@ -12,7 +12,7 @@ Note: This guide requires a PKP. To mint a PKP NFT, visit the [Lit Explorer](htt
 
 ## Creating a Lit PKP object
 
-`LitPKP` is a wrapper of [PKPWallet](https://github.com/LIT-Protocol/pkp-ethers.js/tree/main/packages/wallet), a Wallet class that extends `ether.js Signer` and provides convenient methods to sign transactions and messages using [Lit Actions](https://developer.litprotocol.com/SDK/Explanation/litActions).
+[LitPKP](https://github.com/LIT-Protocol/lit-pkp-sdk/blob/main/lit-pkp.js) is a wrapper of [PKPWallet](https://github.com/LIT-Protocol/pkp-ethers.js/tree/main/packages/wallet), a Wallet class that extends `ether.js Signer` and provides convenient methods to sign transactions and messages using [Lit Actions](https://developer.litprotocol.com/SDK/Explanation/litActions).
 
 `LitPKP` includes added functionality to handle Ethereum JSON RPC signing requests, which will be used to respond to requests facilitated through WalletConnect.
 
