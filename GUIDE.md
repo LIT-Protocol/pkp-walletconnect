@@ -8,6 +8,8 @@ To enable secure communication between a PKP and a dApp, all you need to do is:
 
 Note: This guide requires a PKP. To mint a PKP NFT, visit the [Lit Explorer](https://explorer.litprotocol.com/mint-pkp). You'll need some [test Matic](https://faucet.polygon.technology/) on your wallet.
 
+</br>
+
 ## Creating a Lit PKP object
 
 `LitPKP` is a wrapper of [PKPWallet](https://github.com/LIT-Protocol/pkp-ethers.js/tree/main/packages/wallet), a Wallet class that extends `ether.js Signer` and provides convenient methods to sign transactions and messages using [Lit Actions](https://developer.litprotocol.com/SDK/Explanation/litActions).
@@ -42,6 +44,8 @@ const wallet = new LitPKP({
 await wallet.init();
 ```
 
+</br>
+
 ## Initializing a WalletConnect connector
 
 To create a WalletConnect connector that will interact with a dApp, you'll need a `uri` from a dApp. You can get a `uri` by visiting to this [example dApp](https://example.walletconnect.org/), tapping 'Connect to WalletConnect' button, and copying the QR code to your clipboard.
@@ -64,6 +68,8 @@ const connector = new WalletConnect({
 ```
 
 You can also create a WalletConnect connector with an existing `session` object, which is automatically stored in the browser's local storage as `walletconnect`. You can specify the local storage key by using the `storageId` parameter when creating a new connector.
+
+</br>
 
 ## Subscribing to events
 
@@ -100,6 +106,8 @@ connector.on('disconnect', (error, payload) => {
 ```
 
 You can find more events to listen to in the [docs](https://docs.walletconnect.com/1.0/client-api#register-event-subscription).
+
+</br>
 
 ## Handling session requests
 
@@ -140,6 +148,8 @@ connector.rejectSession({
   message: 'OPTIONAL_ERROR_MESSAGE', // Optional
 });
 ```
+
+</br>
 
 ## Handling call requests
 
@@ -193,6 +203,8 @@ connector.rejectRequest({
 
 The expected payloads and results for Ethereum JSON RPC signing requests are specified [here](https://docs.walletconnect.com/1.0/json-rpc-api-methods/ethereum).
 
+</br>
+
 ## Disconnect from a dApp
 
 To disconnect from a dApp, call `killSession` on the connector.
@@ -201,9 +213,15 @@ To disconnect from a dApp, call `killSession` on the connector.
 connector.killSession();
 ```
 
+</br>
+
 ---
 
+</br>
+
 # Things to note
+
+</br>
 
 ## Using Webpack 5
 
@@ -215,17 +233,23 @@ BREAKING CHANGE: webpack < 5 used to include polyfills for node.js core modules 
 
 Follow this [guide](https://alchemy.com/blog/how-to-polyfill-node-core-modules-in-webpack-5) to resolve the issue.
 
+</br>
+
 ## Session request not firing
 
 Very occasionally, the `session_request` event may not fire when a dApp requests to connect to your PKP. This may be due to a stale URI or a clogged bridge server. You can try to refresh the dApp for a new URI or restart your development server to get assigned a different bridge server.
 
 Using HTTPs for local development has also reduced the frequency of this issue. Check out this guide on [using HTTPs locally](https://web.dev/how-to-use-local-https/) or easy-to-use tools like [ngrok](https://ngrok.com/).
 
+</br>
+
 ## Managing state and user interactions
 
 This guide touches upon integrating Lit and WalletConnect SDKs. In a full-fledged web app, you'll need to keep track of the user's PKPs, existing WalletConnect connectors, and pending and completed WalletConnect requests. You'll also need to handle user interactions, such as approving or rejecting a call request from a dApp.
 
 This repo uses React Context and `useReducer` hook to manage state as seen here [here](https://github.com/LIT-Protocol/pkp-walletconnect/blob/main/context/AppContext.js). Rainbow Wallet also provides a [good example](https://github.com/rainbow-me/rainbow/blob/develop/src/redux/walletconnect.ts) of state management using Redux.
+
+</br>
 
 ## WalletConnect V1 vs V2
 
@@ -235,7 +259,11 @@ At the time of developing the Lit PKP x WalletConnect example, many production a
 
 The [WalletConnect migration guide](https://docs.walletconnect.com/2.0/advanced/migrating-from-v1.0) notes major changes. One notable change is that a single WalletConnect client can manage multiple sessions. This means you no longer need to create a new connector for each dApp as seen in the examples using WalletConnect V1.
 
+</br>
+
 ---
+
+</br>
 
 # Time to build
 
