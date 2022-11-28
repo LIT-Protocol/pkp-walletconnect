@@ -247,7 +247,7 @@ Using HTTPs for local development has also reduced the frequency of this issue. 
 
 This guide touches upon integrating Lit and WalletConnect SDKs. In a full-fledged web app, you'll need to keep track of the user's PKPs, existing WalletConnect connectors, and pending and completed WalletConnect requests. You'll also need to handle user interactions, such as approving or rejecting a call request from a dApp.
 
-This repo uses React Context and `useReducer` hook to manage state as seen here [here](https://github.com/LIT-Protocol/pkp-walletconnect/blob/main/context/AppContext.js). Rainbow Wallet also provides a [good example](https://github.com/rainbow-me/rainbow/blob/develop/src/redux/walletconnect.ts) of state management using Redux.
+This repo uses React Context and `useReducer` hook to manage state as seen [here](https://github.com/LIT-Protocol/pkp-walletconnect/blob/main/context/AppContext.js). Rainbow Wallet also provides a [good example](https://github.com/rainbow-me/rainbow/blob/develop/src/redux/walletconnect.ts) of state management using Redux.
 
 </br>
 
