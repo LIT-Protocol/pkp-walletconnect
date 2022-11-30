@@ -1,22 +1,20 @@
-# Connecting Lit PKPs with dApps
+# Integrating Lit and WalletConnect V1
 
 To enable secure communication between a PKP and a dApp, all you need to do is:
 
 1. Create a Lit PKP Wallet object
-2. Establish a WalletConnect connection
+2. Initialize WalletConnect
 3. Subscribe and respond to events
-
-Note: This guide requires a PKP. To mint a PKP NFT, visit the [Lit Explorer](https://explorer.litprotocol.com/mint-pkp). You'll need some [test Matic](https://faucet.polygon.technology/) in your wallet.
 
 </br>
 
-## Creating a Lit PKP object
+## 1. Create a Lit PKP Wallet object
 
 [LitPKP](https://github.com/LIT-Protocol/lit-pkp-sdk/blob/main/lit-pkp.js) is a wrapper of [PKPWallet](https://github.com/LIT-Protocol/pkp-ethers.js/tree/main/packages/wallet), a Wallet class that extends `ether.js Signer` and provides convenient methods to sign transactions and messages using [Lit Actions](https://developer.litprotocol.com/SDK/Explanation/litActions).
 
 `LitPKP` includes added functionality to handle Ethereum JSON RPC signing requests, which will be used to respond to requests facilitated through WalletConnect.
 
-To create a new `LitPKP` object, you'll need:
+To create a new `LitPKP` instance, you'll need:
 
 - your PKP's public key
 - an `authSig` that can be obtained from the client side by invoking [checkAndSignAuthMessage](https://developer.litprotocol.com/sdk/explanation/walletsigs/authsig/#obtaining-the-authsig)
@@ -44,11 +42,15 @@ const wallet = new LitPKP({
 await wallet.init();
 ```
 
+If you need a PKP, mint a PKP NFT at the [Lit Explorer](https://explorer.litprotocol.com/mint-pkp). You'll need some [test Matic](https://faucet.polygon.technology/) in your wallet.
+
 </br>
 
-## Initializing a WalletConnect connector
+</br>
 
-To create a WalletConnect connector that will interact with a dApp, you'll need a `uri` from a dApp. You can get a `uri` by visiting this [example dApp](https://example.walletconnect.org/), tapping 'Connect to WalletConnect' button, and copying the QR code to your clipboard.
+## 2. Initialize WalletConnect
+
+To initialize a WalletConnect connector, you'll need a `uri` from a dApp. You can get a `uri` by visiting this [example dApp](https://example.walletconnect.org/), tapping 'Connect to WalletConnect' button, and copying the QR code to your clipboard.
 
 ```jsx
 import WalletConnect from '@walletconnect/client';
@@ -71,11 +73,13 @@ You can also create a WalletConnect connector with an existing `session` object,
 
 </br>
 
-## Subscribing to events
+</br>
 
-Subscribe the connector to events to get notified when a dApp requests to connect to your PKP (`session_request`), when a dApp wants your PKP to sign messages or send transactions (`call_request`), and when a dApp disconnects from your PKP (`disconnect`).
+## 3. Subscribe and respond to events
 
-When the subscribed event fires, the connector will respond by calling the callback function you passed to the event listener.
+Once the connector is initialized, the dApp will request to connect to your PKP. To respond to requests from the dApp, you'll need to subscribe to WalletConnect events.
+
+When the subscribed event fires, the connector will respond by invoking the callback function you passed to the event listener.
 
 ```jsx
 // Subscribe to session requests
@@ -105,11 +109,15 @@ connector.on('disconnect', (error, payload) => {
 });
 ```
 
-You can find more events to listen to in the [docs](https://docs.walletconnect.com/1.0/client-api#register-event-subscription).
+You can find more events to listen to in the [docs](https://docs.walletconnect.com/1.0/client-api#register-event-subscription). You should subscribe to at least these events:
+
+- `session_request`: when a dApp requests to connect to your PKP
+- `call_request`: when a dApp wants your PKP to sign messages or send transactions
+- `disconnect`: when a dApp disconnects from your PKP
 
 </br>
 
-## Handling session requests
+### Handling session requests
 
 A `session_request` event will fire when a dApp requests to connect to your PKP.
 
@@ -149,11 +157,13 @@ connector.rejectSession({
 });
 ```
 
+Upon approval of the session request, the connection between the PKP and the dApp is established. You can confirm the connection by checking the `connected` property on the connector.
+
 </br>
 
-## Handling call requests
+### Handling call requests
 
-Once the session is approved, the dApp can send requests to your PKP to sign messages, send transactions, and more, triggering the `call_request` event.
+Once the connection is established, the dApp can now send call requests to your PKP to sign messages, send transactions, and more, triggering `call_request` events.
 
 Example `call_request` payload from the dApp:
 
@@ -205,9 +215,11 @@ The expected payloads and results for Ethereum JSON RPC signing requests are spe
 
 </br>
 
-## Disconnect from a dApp
+</br>
 
-To disconnect from a dApp, call `killSession` on the connector.
+## Disconnecting from the dApp
+
+To disconnect the PKP from the dApp, call `killSession` on the connector.
 
 ```jsx
 connector.killSession();
@@ -215,13 +227,11 @@ connector.killSession();
 
 </br>
 
----
-
 </br>
 
-# Testing your app
+## Testing your app
 
-To test your Lit and WalletConnect integration, you can connect your PKP to these testnet dApps:
+To test your Lit and WalletConnect V1 integration, you can connect your PKP to these testnet dApps:
 
 - [WalletConnect V1 example dapp](https://example.walletconnect.org/)
 - [Opensea testnet dapp](https://testnets.opensea.io/)
@@ -237,13 +247,9 @@ PKPs are still in development on the Serrano Testnet, so do **not** store anythi
 
 </br>
 
----
-
 </br>
 
 # Things to note
-
-</br>
 
 ## Using Webpack 5
 
@@ -257,6 +263,8 @@ Follow this [guide](https://alchemy.com/blog/how-to-polyfill-node-core-modules-i
 
 </br>
 
+</br>
+
 ## Session request not firing
 
 Very occasionally, the `session_request` event may not fire when a dApp requests to connect to your PKP. This may be due to a stale URI or a clogged bridge server. You can try to refresh the dApp for a new URI or restart your development server to get assigned a different bridge server.
@@ -265,11 +273,15 @@ Using HTTPs for local development has also reduced the frequency of this issue. 
 
 </br>
 
+</br>
+
 ## Managing state and user interactions
 
 This guide touches upon integrating Lit and WalletConnect SDKs. In a full-fledged web app, you'll need to keep track of the user's PKPs, existing WalletConnect connectors, and pending and completed WalletConnect requests. You'll also need to handle user interactions, such as approving or rejecting a call request from a dApp.
 
 This repo uses React Context and `useReducer` hook to manage state as seen [here](https://github.com/LIT-Protocol/pkp-walletconnect/blob/main/context/AppContext.js). Rainbow Wallet also provides a [good example](https://github.com/rainbow-me/rainbow/blob/develop/src/redux/walletconnect.ts) of state management using Redux.
+
+</br>
 
 </br>
 
@@ -285,12 +297,21 @@ Noted in the [migration guide](https://docs.walletconnect.com/2.0/advanced/migra
 
 </br>
 
----
+</br>
+
+# Building the open web
+
+Now that you've learned how to connect PKPs to dApps, it's time to build apps that utilizes Lit's decentralized key management network. Find inspiration [here](https://github.com/LIT-Protocol/awesome/blob/main/README.md) and check out our [grants program](https://developer.litprotocol.com/ecosystem/litgrants/).
+
+If you run into any issues, feel free to reach out to us on [Discord](https://litgateway.com/discord).
 
 </br>
 
-# Time to build
+## Resources
 
-Now that you've learned how to integrate Lit Protocol and WalletConnect, it's time to build your apps that leverage Lit Protocol's powerful decentralized key management network. Find inspiration [here](https://github.com/LIT-Protocol/awesome/blob/main/README.md) and learn more about our grants [here](https://developer.litprotocol.com/ecosystem/litgrants/).
-
-If you run into any issues, feel free to reach out to us on [Discord](https://litgateway.com/discord).
+- [About Lit PKPs](https://developer.litprotocol.com/coreconcepts/litactionsandpkps/pkps/)
+- [Using Lit Actions](https://developer.litprotocol.com/SDK/Explanation/litActions)
+- [Lit JS SDK docs](https://serrano-sdk-docs.litprotocol.com/)
+- [Lit JS SDK examples](https://github.com/LIT-Protocol/js-serverless-function-test/tree/main/js-sdkTests)
+- [WalletConnect V1 SDK](https://docs.walletconnect.com/1.0/client-api)
+- [Ethereum JSON RPC spec](https://ethereum.github.io/execution-apis/api-documentation/)
