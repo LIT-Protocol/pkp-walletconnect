@@ -423,7 +423,7 @@ export function AppProvider({ children }) {
     }
   }, [address, signer]);
 
-  // Fetch user's PKPs
+  // // Fetch user's PKPs
   useEffect(() => {
     async function fetchPKPs(address) {
       dispatch({ type: 'fetching_pkps' });
@@ -485,16 +485,16 @@ export function AppProvider({ children }) {
 
   // Reload sent transactions details if found in local storage
   useEffect(() => {
-    async function restoreWcResults() {
-      const storedResults = localStorage.getItem(WC_RESULTS_STORAGE_KEY);
-      if (storedResults) {
-        const results = JSON.parse(storedResults);
+    const storedResults = localStorage.getItem(WC_RESULTS_STORAGE_KEY);
+    if (storedResults) {
+      const results = JSON.parse(storedResults);
+      if (
+        results.length > 0 &&
+        state.wcResults &&
+        Object.keys(state.wcResults).length === 0
+      ) {
         dispatch({ type: 'restore_results', wcResults: results });
       }
-    }
-
-    if (state.wcResults && Object.keys(state.wcResults).length === 0) {
-      restoreWcResults();
     }
   }, [state.wcResults]);
 
