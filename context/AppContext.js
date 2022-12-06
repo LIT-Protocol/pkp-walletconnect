@@ -17,6 +17,8 @@ import {
   AUTH_SIG_STORAGE_KEY,
 } from '../utils/constants';
 import { LitPKP } from 'lit-pkp-sdk';
+import { useRouter } from 'next/router';
+import { mintPKP } from '../utils/contracts';
 
 const INITIAL_APP_STATE = {
   loading: false,
@@ -42,6 +44,7 @@ export function AppProvider({ children }) {
 
   // App state
   const [state, dispatch] = useReducer(appReducer, INITIAL_APP_STATE);
+  const router = useRouter();
 
   // Get WalletConnect connector by peer ID
   function getWcConnector(peerId) {
@@ -401,10 +404,24 @@ export function AppProvider({ children }) {
     dispatch({ type: 'disconnected', initialState: INITIAL_APP_STATE });
   }
 
+  // Handle minting PKPs
+  async function handleMintPKP() {
+    dispatch({ type: 'loading' });
+    try {
+      // Mint PKP
+      const response = await mintPKP();
+      dispatch({ type: 'loaded' });
+      router.reload();
+    } catch (error) {
+      console.error('Error trying to mint PKP: ', error);
+      dispatch({ type: 'loaded' });
+    }
+  }
+
   // Get auth sig if not set in local storage
   useEffect(() => {
     async function getAuthSig(address, signer) {
-      dispatch({ type: 'signing_auth' });
+      dispatch({ type: 'loading' });
 
       await LitJsSdk.signAndSaveAuthMessage({
         web3: signer.provider,
@@ -412,7 +429,7 @@ export function AppProvider({ children }) {
         chainId: DEFAULT_CHAIN_ID,
       });
 
-      dispatch({ type: 'auth_saved' });
+      dispatch({ type: 'loaded' });
     }
 
     if (address && signer) {
@@ -423,10 +440,10 @@ export function AppProvider({ children }) {
     }
   }, [address, signer]);
 
-  // // Fetch user's PKPs
+  // Fetch user's PKPs
   useEffect(() => {
     async function fetchPKPs(address) {
-      dispatch({ type: 'fetching_pkps' });
+      dispatch({ type: 'loading' });
 
       // Check session storage for user's PKPs
       let myPKPs = JSON.parse(sessionStorage.getItem(PKPS_STORAGE_KEY));
@@ -510,6 +527,7 @@ export function AppProvider({ children }) {
     handleSwitchAddress,
     handleSwitchChain,
     handleLogout,
+    handleMintPKP,
   };
 
   return (
