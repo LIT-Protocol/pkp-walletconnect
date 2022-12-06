@@ -5080,7 +5080,7 @@ lit-connect-modal@^0.1.10:
   dependencies:
     micromodal "^0.4.10"
 
-lit-js-sdk@^1.2.24, lit-js-sdk@^1.2.32, lit-js-sdk@^1.2.36:
+lit-js-sdk@^1.2.24, lit-js-sdk@^1.2.36:
   version "1.2.37"
   resolved "https://registry.yarnpkg.com/lit-js-sdk/-/lit-js-sdk-1.2.37.tgz#14c98aa9988007b3dd86a2d45f0c7d52f7c33e66"
   integrity sha512-d/GC2H7sq796AqU3BmSEMYxL1yYV8KujzPC47quv03QqCDgOMDuY9QtXjjGLpJRD0XS2CKpoGjIRreYNuFMBog==
@@ -5107,10 +5107,38 @@ lit-js-sdk@^1.2.24, lit-js-sdk@^1.2.32, lit-js-sdk@^1.2.36:
     tweetnacl-util "^0.15.1"
     utf-8-validate "^5.0.8"
 
-lit-pkp-sdk@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/lit-pkp-sdk/-/lit-pkp-sdk-1.0.4.tgz#231a8cd16129bc037f8b6030402c47b53b11e2c0"
-  integrity sha512-kzmG7sobwCvaQDRarICIJ2wwJmjsHtKjSVL4aN93UGMXCX9SoshcshFd7YYUWG5WJeUv8xzajTK9NRfb/PfUlg==
+lit-js-sdk@^1.2.32:
+  version "1.2.50"
+  resolved "https://registry.yarnpkg.com/lit-js-sdk/-/lit-js-sdk-1.2.50.tgz#1a0bee92289b1869aee17a223ca928d08fee54df"
+  integrity sha512-j6HkPFZQDSjtzaVTYDNUX/DXoxl3CqWri2ZFtPuHEf72clPxxOmg+kBS0N+EO+icikWpEsSTPsvSwtlphlrUow==
+  dependencies:
+    "@ethersproject/bytes" "^5.5.0"
+    "@ethersproject/contracts" "^5.2.0"
+    "@ethersproject/hash" "^5.4.0"
+    "@ethersproject/providers" "^5.2.0"
+    "@ethersproject/strings" "^5.5.0"
+    "@ethersproject/transactions" "^5.7.0"
+    "@ethersproject/units" "^5.4.0"
+    "@ethersproject/wallet" "^5.2.0"
+    "@walletconnect/ethereum-provider" "1.7.8"
+    buffer "^6.0.3"
+    bufferutil "^4.0.6"
+    cross-blob "^3.0.1"
+    js-base64 "^3.7.2"
+    jszip "^3.6.0"
+    lit-connect-modal "^0.1.10"
+    lit-siwe "^1.1.8"
+    node-fetch "^3.2.3"
+    pako "^2.0.4"
+    tslib "^2.3.1"
+    tweetnacl "^1.0.3"
+    tweetnacl-util "^0.15.1"
+    utf-8-validate "^5.0.8"
+
+lit-pkp-sdk@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/lit-pkp-sdk/-/lit-pkp-sdk-1.0.5.tgz#01464191f6b9d669987a2cc085252de1b44a478c"
+  integrity sha512-gZVB3/QmSP0y05RqxHGfUHClKqq9Hc0jyaJe8Zy5ASsrVr5Zmr8sEcdeDT8fWN4hNNa70/ihNsSo307CS1JPrw==
   dependencies:
     "@ethersproject/bytes" "^5.7.0"
     "@ethersproject/transactions" "^5.7.0"
