@@ -5135,10 +5135,10 @@ lit-js-sdk@^1.2.32:
     tweetnacl-util "^0.15.1"
     utf-8-validate "^5.0.8"
 
-lit-pkp-sdk@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/lit-pkp-sdk/-/lit-pkp-sdk-1.0.5.tgz#01464191f6b9d669987a2cc085252de1b44a478c"
-  integrity sha512-gZVB3/QmSP0y05RqxHGfUHClKqq9Hc0jyaJe8Zy5ASsrVr5Zmr8sEcdeDT8fWN4hNNa70/ihNsSo307CS1JPrw==
+lit-pkp-sdk@^1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/lit-pkp-sdk/-/lit-pkp-sdk-1.0.6.tgz#3150189ec4427857e2c0b82af2e78d44ddf03353"
+  integrity sha512-rHEppCcUbwUwsiTSQ+WXdCgG2XpcjOpJNQjZZISIFk+7JWPz5oJQ/j4ZX6oBmQMOLhFXyAOFjo0pI0NkVIEK5A==
   dependencies:
     "@ethersproject/bytes" "^5.7.0"
     "@ethersproject/transactions" "^5.7.0"
