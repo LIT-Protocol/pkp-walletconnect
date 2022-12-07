@@ -4,6 +4,7 @@ import { useAppState, useAppActions } from '../context/AppContext';
 import { isSignRequestSupported } from 'lit-pkp-sdk';
 
 export default function CallRequest({ payload }) {
+  console.log('CallRequest payload', payload);
   const { wcConnectors, appChains } = useAppState();
   const { wcApproveRequest, wcRejectRequest } = useAppActions();
   const wcConnector = wcConnectors[payload.peerId];
