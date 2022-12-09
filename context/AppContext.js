@@ -454,9 +454,14 @@ export function AppProvider({ children }) {
       dispatch({ type: 'loaded' });
     }
 
+    // If auth sig is set, check if it's associated with the current address
     if (address && signer) {
       const authSig = localStorage.getItem(AUTH_SIG_STORAGE_KEY);
-      if (!authSig || (authSig && authSig.address != address)) {
+      if (
+        !authSig ||
+        (authSig &&
+          JSON.parse(authSig).address.toLowerCase() != address.toLowerCase())
+      ) {
         getAuthSig(address, signer);
       }
     }
@@ -468,7 +473,11 @@ export function AppProvider({ children }) {
       dispatch({ type: 'loading' });
 
       // Check session storage for user's PKPs
-      let myPKPs = JSON.parse(sessionStorage.getItem(PKPS_STORAGE_KEY));
+      let myPKPs = null;
+      const savedPKPs = sessionStorage.getItem(PKPS_STORAGE_KEY);
+      if (savedPKPs) {
+        myPKPs = JSON.parse(savedPKPs);
+      }
       if (!myPKPs || Object.values(myPKPs).length === 0) {
         myPKPs = await fetchPKPsByAddress(address);
         sessionStorage.setItem(PKPS_STORAGE_KEY, JSON.stringify(myPKPs));
@@ -507,8 +516,11 @@ export function AppProvider({ children }) {
   useEffect(() => {
     async function restoreWcSessions(wcSessionKeys) {
       wcSessionKeys.map(async sessionKey => {
-        const sessionData = JSON.parse(localStorage.getItem(sessionKey));
-        await wcConnect({ session: sessionData });
+        const savedSession = localStorage.getItem(sessionKey);
+        if (savedSession) {
+          const sessionData = JSON.parse(savedSession);
+          await wcConnect({ session: sessionData });
+        }
       });
     }
     // Check if cloud wallet exists and there are no WalletConnect sessions
