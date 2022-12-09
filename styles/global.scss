@@ -694,6 +694,8 @@ body {
 }
 
 .dropdownMenu__content {
+  max-height: 240px;
+  overflow-y: auto;
   min-width: 220px;
   background-color: white;
   border-radius: 0.5rem;
