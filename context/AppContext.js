@@ -421,15 +421,10 @@ export function AppProvider({ children }) {
       // Track new PKP
       const myPKPs = await fetchPKPsByAddress(address);
       sessionStorage.setItem(PKPS_STORAGE_KEY, JSON.stringify(myPKPs));
-      let currentPKPAddress = JSON.parse(
-        sessionStorage.getItem(CURRENT_PKP_STORAGE_KEY)
-      );
+      let currentPKPAddress = sessionStorage.getItem(CURRENT_PKP_STORAGE_KEY);
       if (!currentPKPAddress && myPKPs && Object.values(myPKPs).length > 0) {
         currentPKPAddress = Object.values(myPKPs)[0].address;
-        sessionStorage.setItem(
-          CURRENT_PKP_STORAGE_KEY,
-          JSON.stringify(currentPKPAddress)
-        );
+        sessionStorage.setItem(CURRENT_PKP_STORAGE_KEY, currentPKPAddress);
       }
 
       dispatch({
@@ -461,7 +456,7 @@ export function AppProvider({ children }) {
 
     if (address && signer) {
       const authSig = localStorage.getItem(AUTH_SIG_STORAGE_KEY);
-      if (!authSig) {
+      if (!authSig || (authSig && authSig.address != address)) {
         getAuthSig(address, signer);
       }
     }
@@ -480,9 +475,7 @@ export function AppProvider({ children }) {
       }
 
       // Check session storage for current PKP address
-      let currentPKPAddress = JSON.parse(
-        sessionStorage.getItem(CURRENT_PKP_STORAGE_KEY)
-      );
+      let currentPKPAddress = sessionStorage.getItem(CURRENT_PKP_STORAGE_KEY);
       if (!currentPKPAddress && myPKPs && Object.values(myPKPs).length > 0) {
         currentPKPAddress = Object.values(myPKPs)[0].address;
         sessionStorage.setItem(CURRENT_PKP_STORAGE_KEY, currentPKPAddress);
