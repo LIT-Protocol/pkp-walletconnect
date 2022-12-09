@@ -279,6 +279,8 @@ export function AppProvider({ children }) {
         result: wcResult,
       });
 
+      console.log('Respond to WalletConnect with: ', wcResult);
+
       dispatch({
         type: 'call_request_handled',
         wcConnector: wcConnector,
