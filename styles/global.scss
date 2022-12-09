@@ -423,6 +423,7 @@ body {
     border-radius: 0.5rem;
     background-color: $wallet-bg;
     cursor: pointer;
+    flex-shrink: 0;
 
     &:hover {
       border-color: #eeeeee;
@@ -470,6 +471,10 @@ body {
   &__title {
     display: flex;
     align-items: flex-start;
+
+    h4 {
+      word-break: break-all;
+    }
   }
 
   &__network {
@@ -480,6 +485,7 @@ body {
     font-size: 10px;
     margin-left: 0.5rem;
     color: #4b5563;
+    flex-shrink: 0;
   }
 
   &__btn {
