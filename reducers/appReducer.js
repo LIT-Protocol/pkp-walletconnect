@@ -12,6 +12,7 @@ import { WC_RESULTS_STORAGE_KEY } from '../utils/constants';
 //   appChains: DEFAULT_CHAINS,
 // };
 
+// Handle all actions dispatched and update state accordingly
 export default function appReducer(state, action) {
   switch (action.type) {
     case 'update_tab': {
@@ -20,28 +21,21 @@ export default function appReducer(state, action) {
         tab: action.tab,
       };
     }
-    case 'signing_auth': {
+    case 'loading': {
       return {
         ...state,
         loading: true,
       };
     }
-    case 'auth_saved': {
+    case 'loaded': {
       return {
         ...state,
         loading: false,
-      };
-    }
-    case 'fetching_pkps': {
-      return {
-        ...state,
-        loading: true,
       };
     }
     case 'pkps_fetched': {
       return {
         ...state,
-        loading: false,
         currentPKPAddress: action.currentPKPAddress,
         myPKPs: action.myPKPs,
       };
@@ -147,11 +141,13 @@ export default function appReducer(state, action) {
   }
 }
 
+// Update chains
 function addChain(chain, chains) {
   const updatedChains = [...chains, chain];
   return updatedChains;
 }
 
+// Update WalletConnect client
 function updateWcConnector(wcConnector, wcConnectors) {
   const updatedConnectors = {
     ...wcConnectors,
@@ -160,6 +156,7 @@ function updateWcConnector(wcConnector, wcConnectors) {
   return updatedConnectors;
 }
 
+// Remove WalletConnect client
 function removeWcConnector(wcConnector, wcConnectors) {
   let filteredConnectors = wcConnectors;
   const connectorToRemove = Object.values(wcConnectors).find(
@@ -177,11 +174,13 @@ function removeWcConnector(wcConnector, wcConnectors) {
   return filteredConnectors;
 }
 
+// Add WalletConnect pending request
 function addWcRequest(wcRequest, wcRequests) {
   const updatedRequests = [...wcRequests, wcRequest];
   return updatedRequests;
 }
 
+// Removing WalletConnect pending request
 function removeWcRequest(payload, wcRequests) {
   const filteredRequests = wcRequests.filter(
     request => request.id !== payload.id
@@ -189,6 +188,7 @@ function removeWcRequest(payload, wcRequests) {
   return filteredRequests;
 }
 
+// Save WalletConnect results for signing txns
 function updateResults({
   pkpAddress,
   peerMeta,

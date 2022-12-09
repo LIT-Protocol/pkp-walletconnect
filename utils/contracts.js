@@ -95,13 +95,31 @@ export const getMintCost = async () => {
   return wei2eth(mintCost);
 };
 
-export const mintPKP = async mintCost => {
+export const mintPKP = async () => {
   if (!pkpContract) {
     throw new Error('Unable to connect to PKPNFT contract');
   }
-  const tx = await pkpContract.mintNext(ECDSA_KEY, mintCost);
-  const res = await tx.wait();
-  const tokenIdFromEvent = res.events[0].topics[3];
+  // Get mint cost
+  const mintCost = await getMintCost();
+  console.log('Fetched mint cost', mintCost);
 
-  return { tx, tokenId: tokenIdFromEvent };
+  // Estimate gas
+  const gasLimit = await pkpContract.estimateGas.mintNext(ECDSA_KEY, {
+    value: mintCost.arg,
+  });
+  console.log('Estimated gas');
+
+  // Mint PKP NFT
+  const tx = await pkpContract.mintNext(ECDSA_KEY, {
+    value: mintCost.arg,
+    gasLimit: gasLimit,
+  });
+  console.log('Minting');
+  const res = await tx.wait();
+
+  // Get minted token ID, public key, and eth address
+  const tokenId = hexToDecimal(res.events[0].topics[3]);
+  console.log('Minted tokenId', tokenId);
+
+  return { tx, tokenId };
 };

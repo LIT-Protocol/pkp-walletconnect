@@ -206,7 +206,7 @@ body {
 
 .connect-wallet-btn {
   padding: 1rem 1.5rem;
-  border: 1px solid black;
+  border: 1px solid #eeeeee;
   border-radius: 0.5rem;
   text-decoration: none;
   width: 100%;
@@ -215,7 +215,7 @@ body {
   background-color: white;
   cursor: pointer;
   &:hover {
-    background-color: #f2f2f2;
+    background-color: #f9fafb;
   }
 }
 
