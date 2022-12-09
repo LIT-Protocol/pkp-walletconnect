@@ -101,23 +101,25 @@ export const mintPKP = async () => {
   }
   // Get mint cost
   const mintCost = await getMintCost();
+  console.log('Fetched mint cost', mintCost);
+
   // Estimate gas
   const gasLimit = await pkpContract.estimateGas.mintNext(ECDSA_KEY, {
     value: mintCost.arg,
   });
+  console.log('Estimated gas');
+
   // Mint PKP NFT
   const tx = await pkpContract.mintNext(ECDSA_KEY, {
     value: mintCost.arg,
     gasLimit: gasLimit,
   });
+  console.log('Minting');
   const res = await tx.wait();
+
   // Get minted token ID, public key, and eth address
-  const tokenId = res.events[0].topics[3];
-  console.log('tokenId', tokenId);
+  const tokenId = hexToDecimal(res.events[0].topics[3]);
+  console.log('Minted tokenId', tokenId);
 
-  // const pubkey = await getPubkey(tokenId);
-  // const ethAddress = ethers.utils.computeAddress(pubkey);
-  // const newPKP = { tokenId: tokenId, publicKey: pubkey, address: ethAddress };
-
-  return { tx, tokenId: tokenId };
+  return { tx, tokenId };
 };

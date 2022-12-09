@@ -1,4 +1,4 @@
-import { WC_RESULTS_STORAGE_KEY, PKPS_STORAGE_KEY } from '../utils/constants';
+import { WC_RESULTS_STORAGE_KEY } from '../utils/constants';
 
 // const INITIAL_APP_STATE = {
 //   loading: false,
@@ -36,20 +36,10 @@ export default function appReducer(state, action) {
     case 'pkps_fetched': {
       return {
         ...state,
-        loading: false,
         currentPKPAddress: action.currentPKPAddress,
         myPKPs: action.myPKPs,
       };
     }
-    // case 'minted': {
-    //   const updatedPKPs = addPKP(action.newPKP, state.myPKPs);
-    //   return {
-    //     ...state,
-    //     loading: false,
-    //     currentPKPAddress: action.currentPKPAddress,
-    //     myPKPs: updatedPKPs,
-    //   };
-    // }
     case 'restore_results': {
       return {
         ...state,
@@ -149,16 +139,6 @@ export default function appReducer(state, action) {
       throw Error('Unknown action: ' + action.type);
     }
   }
-}
-
-// Update my PKPs
-function addPKP(pkp, pkps) {
-  const updatedPKPs = {
-    ...pkps,
-    [pkp.address]: pkp,
-  };
-  sessionStorage.setItem(PKPS_STORAGE_KEY, JSON.stringify(updatedPKPs));
-  return updatedPKPs;
 }
 
 // Update chains

@@ -15,6 +15,7 @@ import {
   PKPS_STORAGE_KEY,
   WC_RESULTS_STORAGE_KEY,
   AUTH_SIG_STORAGE_KEY,
+  CURRENT_PKP_STORAGE_KEY,
 } from '../utils/constants';
 import { LitPKP } from 'lit-pkp-sdk';
 import { useRouter } from 'next/router';
@@ -354,10 +355,12 @@ export function AppProvider({ children }) {
 
   // Use different PKP address
   async function handleSwitchAddress(newAddress) {
-    const account = state.pkpWallets.find(
-      account => account.address === newAddress
-    );
+    const account = state.myPKPs[newAddress];
     if (account) {
+      sessionStorage.setItem(
+        CURRENT_PKP_STORAGE_KEY,
+        JSON.stringify(newAddress)
+      );
       dispatch({ type: 'switch_address', address: newAddress });
     } else {
       throw Error('Account not found');
@@ -398,6 +401,7 @@ export function AppProvider({ children }) {
 
     // Remove data from local and session storage
     localStorage.removeItem(AUTH_SIG_STORAGE_KEY);
+    sessionStorage.removeItem(CURRENT_PKP_STORAGE_KEY);
     sessionStorage.removeItem(PKPS_STORAGE_KEY);
     localStorage.removeItem(WC_RESULTS_STORAGE_KEY);
 
@@ -407,10 +411,31 @@ export function AppProvider({ children }) {
   // Handle minting PKPs
   async function handleMintPKP() {
     dispatch({ type: 'loading' });
+
     try {
       // Mint PKP
       const response = await mintPKP();
-      dispatch({ type: 'loaded' });
+
+      // Track new PKP
+      const myPKPs = await fetchPKPsByAddress(address);
+      sessionStorage.setItem(PKPS_STORAGE_KEY, JSON.stringify(myPKPs));
+      let currentPKPAddress = JSON.parse(
+        sessionStorage.getItem(CURRENT_PKP_STORAGE_KEY)
+      );
+      if (!currentPKPAddress && myPKPs && Object.values(myPKPs).length > 0) {
+        currentPKPAddress = Object.values(myPKPs)[0].address;
+        sessionStorage.setItem(
+          CURRENT_PKP_STORAGE_KEY,
+          JSON.stringify(currentPKPAddress)
+        );
+      }
+
+      dispatch({
+        type: 'pkps_fetched',
+        currentPKPAddress: currentPKPAddress,
+        myPKPs: myPKPs,
+      });
+
       router.reload();
     } catch (error) {
       console.error('Error trying to mint PKP: ', error);
@@ -452,9 +477,13 @@ export function AppProvider({ children }) {
         sessionStorage.setItem(PKPS_STORAGE_KEY, JSON.stringify(myPKPs));
       }
 
-      let currentPKPAddress = null;
-      if (myPKPs && Object.values(myPKPs).length > 0) {
+      // Check session storage for current PKP address
+      let currentPKPAddress = JSON.parse(
+        sessionStorage.getItem(CURRENT_PKP_STORAGE_KEY)
+      );
+      if (!currentPKPAddress && myPKPs && Object.values(myPKPs).length > 0) {
         currentPKPAddress = Object.values(myPKPs)[0].address;
+        sessionStorage.setItem(CURRENT_PKP_STORAGE_KEY, currentPKPAddress);
       }
 
       dispatch({
@@ -462,6 +491,8 @@ export function AppProvider({ children }) {
         currentPKPAddress: currentPKPAddress,
         myPKPs: myPKPs,
       });
+
+      dispatch({ type: 'loaded' });
     }
 
     if (address && signer) {
@@ -470,7 +501,7 @@ export function AppProvider({ children }) {
         connectLitContracts(signer);
       }
 
-      // Fetch user's PKPs
+      // Check if PKPs are in local storage
       if (!state.currentPKPAddress) {
         fetchPKPs(address);
       }

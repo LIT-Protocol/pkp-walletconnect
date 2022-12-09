@@ -11,7 +11,6 @@ export default function SessionCard({ wcConnector }) {
   const chain = getChain(wcConnector.chainId, appChains);
 
   async function updateWcChain(chainId) {
-    console.log('updateWcChain', chainId);
     await wcSwitchChain(wcConnector.peerId, chainId);
   }
 

@@ -14,6 +14,15 @@ export const truncate = str => {
   return `${str.substring(0, 5)}...${str.substring(str.length - 5)}`;
 };
 
+export const replaceWithBreaks = str => {
+  try {
+    const newStr = str.replace(/\n/g, '<br />');
+    return newStr;
+  } catch (e) {
+    return str;
+  }
+};
+
 export const wei2eth = value => {
   let cost = {
     wei: value,
@@ -83,7 +92,7 @@ export const renderRequest = (payload, peerMeta, chains) => {
     case 'eth_sign':
       title = 'Sign message';
       description = `${appName} wants you to sign the following message:`;
-      message = payload.params[1];
+      message = convertHexToUtf8(payload.params[1]);
       break;
     case 'personal_sign':
       title = 'Sign message';

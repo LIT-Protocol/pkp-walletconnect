@@ -1,10 +1,14 @@
-import { getChain, renderRequest, truncate } from '../utils/helpers';
+import { isSignRequestSupported } from 'lit-pkp-sdk';
 import { CodeBlock, codepen } from 'react-code-blocks';
 import { useAppState, useAppActions } from '../context/AppContext';
-import { isSignRequestSupported } from 'lit-pkp-sdk';
+import {
+  getChain,
+  renderRequest,
+  truncate,
+  replaceWithBreaks,
+} from '../utils/helpers';
 
 export default function CallRequest({ payload }) {
-  console.log('CallRequest payload', payload);
   const { wcConnectors, appChains } = useAppState();
   const { wcApproveRequest, wcRejectRequest } = useAppActions();
   const wcConnector = wcConnectors[payload.peerId];
@@ -39,7 +43,12 @@ export default function CallRequest({ payload }) {
             payload.method === 'personal_sign') && (
             <div className="request__detail">
               <h4 className="subtitle">Message</h4>
-              <p className="request__message">{message}</p>
+              <p
+                dangerouslySetInnerHTML={{
+                  __html: replaceWithBreaks(message),
+                }}
+                className="request__message"
+              ></p>
             </div>
           )}
           {(payload.method.startsWith('eth_signTypedData') ||

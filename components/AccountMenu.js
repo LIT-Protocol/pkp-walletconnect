@@ -9,6 +9,10 @@ export default function AccountMenu() {
   const { currentPKPAddress, myPKPs } = useAppState();
   const { handleSwitchAddress, handleLogout } = useAppActions();
 
+  const handleValueChange = async value => {
+    await handleSwitchAddress(value);
+  };
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -32,7 +36,7 @@ export default function AccountMenu() {
           {Object.keys(myPKPs).length > 0 && (
             <DropdownMenu.RadioGroup
               value={currentPKPAddress}
-              onValueChange={handleSwitchAddress}
+              onValueChange={handleValueChange}
             >
               {Object.keys(myPKPs).map(pkpAddress => (
                 <DropdownMenu.RadioItem

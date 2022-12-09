@@ -8,6 +8,10 @@ export default function NetworkMenu() {
 
   const currentChain = appChains.find(chain => chain.chainId === appChainId);
 
+  const handleValueChange = async value => {
+    await handleSwitchChain(value);
+  };
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -24,7 +28,7 @@ export default function NetworkMenu() {
 
           <DropdownMenu.RadioGroup
             value={appChainId}
-            onValueChange={handleSwitchChain}
+            onValueChange={handleValueChange}
           >
             {appChains.length > 0 &&
               appChains.map((chain, index) => (
