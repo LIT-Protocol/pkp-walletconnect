@@ -361,17 +361,33 @@ export function AppProvider({ children }) {
     const peerId = payload.peerId;
     const wcConnector = getWcConnector(peerId);
     const pkpAddress = wcConnector.accounts[0];
-    await wcConnector.rejectRequest({
-      id: payload.id,
-      error: { message: 'User rejected WalletConnect request' },
-    });
-    dispatch({
-      type: 'call_request_handled',
-      wcConnector: wcConnector,
-      pkpAddress: pkpAddress,
-      payload: payload,
-      error: { message: 'User rejected WalletConnect request' },
-    });
+
+    try {
+      await wcConnector.rejectRequest({
+        id: payload.id,
+        error: { message: 'User rejected WalletConnect request' },
+      });
+      dispatch({
+        type: 'call_request_handled',
+        wcConnector: wcConnector,
+        pkpAddress: pkpAddress,
+        payload: payload,
+        error: { message: 'User rejected WalletConnect request' },
+      });
+    } catch (error) {
+      console.error(
+        'Error trying to reject WalletConnect call request: ',
+        error
+      );
+
+      dispatch({
+        type: 'call_request_handled',
+        wcConnector: wcConnector,
+        pkpAddress: pkpAddress,
+        payload: payload,
+        error: { message: 'User rejected WalletConnect request' },
+      });
+    }
   }
 
   // Use different PKP address

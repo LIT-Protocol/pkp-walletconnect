@@ -185,10 +185,14 @@ function addWcRequest(wcRequest, wcRequests) {
 
 // Removing WalletConnect pending request
 function removeWcRequest(payload, wcRequests) {
-  const filteredRequests = wcRequests.filter(
-    request => request.id !== payload.id
-  );
-  return filteredRequests;
+  if (payload) {
+    const filteredRequests = wcRequests.filter(
+      request => request.id !== payload.id
+    );
+    return filteredRequests;
+  } else {
+    return wcRequests;
+  }
 }
 
 // Save WalletConnect results for signing txns
