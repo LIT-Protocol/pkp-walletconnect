@@ -39,11 +39,14 @@ export const hexToDecimal = value => {
 };
 
 export function convertHexToUtf8(value) {
-  if (ethers.utils.isHexString(value)) {
-    return ethers.utils.toUtf8String(value);
+  try {
+    if (ethers.utils.isHexString(value)) {
+      return ethers.utils.toUtf8String(value);
+    }
+    return value;
+  } catch (e) {
+    return value;
   }
-
-  return value;
 }
 
 export const getTransactionToSign = txParams => {
@@ -109,26 +112,27 @@ export const renderRequest = (payload, peerMeta, chains) => {
       break;
     case 'eth_signTransaction':
       title = 'Sign transaction';
-      description = `${appName} 
-      wants you to sign the following transaction:`;
+      description = `${appName} wants you to sign the following transaction:`;
       data = JSON.stringify(getTransactionToSign(payload.params[0]), null, 2);
       break;
     case 'eth_sendTransaction':
       title = 'Send transaction';
-      description = `${appName} 
-      wants you to sign and send the following transaction:`;
+      description = `${appName} wants you to sign and send the following transaction:`;
       data = JSON.stringify(getTransactionToSign(payload.params[0]), null, 2);
+      break;
+    case 'eth_sendRawTransaction':
+      title = 'Send raw transaction';
+      description = `${appName} wants you to send the following raw transaction:`;
+      data = payload.params[0];
       break;
     case 'wallet_addEthereumChain':
       title = 'Add network';
-      description = `${appName} 
-      wants you to add the following network:`;
+      description = `${appName} wants you to add the following network:`;
       data = JSON.stringify(payload.params[0], null, 2);
       break;
     case 'wallet_switchEthereumChain':
       title = 'Switch network';
-      description = `${appName} 
-      wants you to switch to the following network:`;
+      description = `${appName} wants you to switch to the following network:`;
       const newChainId = convertHexToNumber(payload.params[0].chainId);
       const newChain = getChain(newChainId, chains);
       data = JSON.stringify(newChain, null, 2);

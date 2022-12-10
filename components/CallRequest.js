@@ -24,6 +24,18 @@ export default function CallRequest({ payload }) {
     wcPeerMeta,
     appChains
   );
+  const showParagraph = ['eth_sign', 'personal_sign'].includes(payload.method);
+  const showCodeBlock = [
+    'eth_signTypedData',
+    'eth_signTypedData_v1',
+    'eth_signTypedData_v3',
+    'eth_signTypedData_v4',
+    'eth_signTransaction',
+    'eth_sendTransaction',
+    'eth_sendRawTransaction',
+    'wallet_addEthereumChain',
+    'wallet_switchEthereumChain',
+  ].includes(payload.method);
 
   return (
     <main className="container">
@@ -39,8 +51,7 @@ export default function CallRequest({ payload }) {
           )}
           <h2 className="request__title">{title}</h2>
           <p className="request__description">{description}</p>
-          {(payload.method === 'eth_sign' ||
-            payload.method === 'personal_sign') && (
+          {showParagraph && (
             <div className="request__detail">
               <h4 className="subtitle">Message</h4>
               <p
@@ -51,11 +62,7 @@ export default function CallRequest({ payload }) {
               ></p>
             </div>
           )}
-          {(payload.method.startsWith('eth_signTypedData') ||
-            payload.method === 'eth_signTransaction' ||
-            payload.method === 'eth_sendTransaction' ||
-            payload.method === 'wallet_addEthereumChain' ||
-            payload.method === 'wallet_switchEthereumChain') && (
+          {showCodeBlock && (
             <div className="request__detail">
               <h4 className="subtitle">
                 {payload.method.startsWith('eth_signTypedData')

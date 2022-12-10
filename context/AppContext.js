@@ -176,9 +176,10 @@ export function AppProvider({ children }) {
   function wcApproveSession(payload) {
     console.log('Approve WalletConnect session', payload);
 
+    const peerId = payload.params[0].peerId;
+    const wcConnector = getWcConnector(peerId);
+
     try {
-      const peerId = payload.params[0].peerId;
-      const wcConnector = getWcConnector(peerId);
       wcConnector.approveSession({
         accounts: [state.currentPKPAddress],
         chainId: state.appChainId,
@@ -190,6 +191,12 @@ export function AppProvider({ children }) {
       });
     } catch (error) {
       console.error('Error trying to approve WalletConnect session: ', error);
+
+      dispatch({
+        type: 'session_request_handled',
+        payload: payload,
+        wcConnector: wcConnector,
+      });
     }
   }
 
@@ -197,9 +204,10 @@ export function AppProvider({ children }) {
   function wcRejectSession(payload) {
     console.log('Reject WalletConnect session');
 
+    const peerId = payload.params.peerId;
+    const wcConnector = getWcConnector(peerId);
+
     try {
-      const peerId = payload.params.peerId;
-      const wcConnector = getWcConnector(peerId);
       wcConnector.rejectSession();
       dispatch({
         type: 'session_request_handled',
@@ -208,13 +216,20 @@ export function AppProvider({ children }) {
       });
     } catch (error) {
       console.error('Error trying to reject WalletConnect session: ', error);
+
+      dispatch({
+        type: 'session_request_handled',
+        payload: payload,
+        wcConnector: wcConnector,
+      });
     }
   }
 
   // Update WalletConnect session
   function wcUpdateSession(peerId, pkpAddress, chainId) {
+    const wcConnector = getWcConnector(peerId);
+
     try {
-      const wcConnector = getWcConnector(peerId);
       wcConnector.updateSession({
         accounts: [pkpAddress],
         chainId: chainId,
@@ -225,6 +240,11 @@ export function AppProvider({ children }) {
       });
     } catch (error) {
       console.error('Error trying to update WalletConnect session: ', error);
+
+      dispatch({
+        type: 'connector_updated',
+        wcConnector: wcConnector,
+      });
     }
   }
 
@@ -250,6 +270,7 @@ export function AppProvider({ children }) {
         case 'eth_signTypedData_v4':
         case 'eth_signTransaction':
         case 'eth_sendTransaction':
+        case 'eth_sendRawTransaction':
           // Sign with PKP Wallet
           result = await wallet.signEthereumRequest(payload);
           break;
@@ -268,11 +289,16 @@ export function AppProvider({ children }) {
           throw new Error('Unsupported WalletConnect method');
       }
 
-      const wcResult = result?.hash
-        ? result?.hash
-        : result?.raw
-        ? result?.raw
-        : result;
+      // eth_sign, personal_sign, eth_SignTypedData, eth_signTransaction should return a signature
+      // eth_sendTransaction, eth_sendRawTransaction should return a transaction hash
+      let wcResult = result;
+      if (
+        ['eth_sendTransaction', 'eth_sendRawTransaction'].includes(
+          payload.method
+        )
+      ) {
+        wcResult = result.hash;
+      }
 
       wcConnector.approveRequest({
         id: payload.id,
@@ -332,37 +358,27 @@ export function AppProvider({ children }) {
   async function wcRejectRequest(payload) {
     console.log('Reject request via WalletConnect');
 
-    try {
-      const peerId = payload.peerId;
-      const wcConnector = getWcConnector(peerId);
-      const pkpAddress = wcConnector.accounts[0];
-      await wcConnector.rejectRequest({
-        id: payload.id,
-        error: { message: 'User rejected WalletConnect request' },
-      });
-      dispatch({
-        type: 'call_request_handled',
-        wcConnector: wcConnector,
-        pkpAddress: pkpAddress,
-        payload: payload,
-        error: { message: 'User rejected WalletConnect request' },
-      });
-    } catch (error) {
-      console.error(
-        'Error trying to reject WalletConnect call request: ',
-        error
-      );
-    }
+    const peerId = payload.peerId;
+    const wcConnector = getWcConnector(peerId);
+    const pkpAddress = wcConnector.accounts[0];
+    await wcConnector.rejectRequest({
+      id: payload.id,
+      error: { message: 'User rejected WalletConnect request' },
+    });
+    dispatch({
+      type: 'call_request_handled',
+      wcConnector: wcConnector,
+      pkpAddress: pkpAddress,
+      payload: payload,
+      error: { message: 'User rejected WalletConnect request' },
+    });
   }
 
   // Use different PKP address
   async function handleSwitchAddress(newAddress) {
     const account = state.myPKPs[newAddress];
     if (account) {
-      sessionStorage.setItem(
-        CURRENT_PKP_STORAGE_KEY,
-        JSON.stringify(newAddress)
-      );
+      sessionStorage.setItem(CURRENT_PKP_STORAGE_KEY, newAddress);
       dispatch({ type: 'switch_address', address: newAddress });
     } else {
       throw Error('Account not found');
