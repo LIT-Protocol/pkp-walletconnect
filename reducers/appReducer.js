@@ -149,10 +149,13 @@ function addChain(chain, chains) {
 
 // Update WalletConnect client
 function updateWcConnector(wcConnector, wcConnectors) {
-  const updatedConnectors = {
-    ...wcConnectors,
-    [wcConnector.peerId]: wcConnector,
-  };
+  let updatedConnectors = wcConnectors;
+  if (wcConnector?.peerId) {
+    updatedConnectors = {
+      ...wcConnectors,
+      [wcConnector.peerId]: wcConnector,
+    };
+  }
   return updatedConnectors;
 }
 
@@ -160,7 +163,7 @@ function updateWcConnector(wcConnector, wcConnectors) {
 function removeWcConnector(wcConnector, wcConnectors) {
   let filteredConnectors = wcConnectors;
   const connectorToRemove = Object.values(wcConnectors).find(
-    connector => connector.peerMeta?.url === wcConnector.peerMeta?.url
+    connector => connector.peerMeta?.url === wcConnector?.peerMeta?.url
   );
   if (connectorToRemove && connectorToRemove.peerMeta?.url) {
     Object.keys(filteredConnectors).forEach(key => {
@@ -182,10 +185,14 @@ function addWcRequest(wcRequest, wcRequests) {
 
 // Removing WalletConnect pending request
 function removeWcRequest(payload, wcRequests) {
-  const filteredRequests = wcRequests.filter(
-    request => request.id !== payload.id
-  );
-  return filteredRequests;
+  if (payload) {
+    const filteredRequests = wcRequests.filter(
+      request => request.id !== payload.id
+    );
+    return filteredRequests;
+  } else {
+    return wcRequests;
+  }
 }
 
 // Save WalletConnect results for signing txns
@@ -205,7 +212,13 @@ function updateResults({
 
   let updatedResults = wcResults;
   // Save only successfully sent transactions
-  if (payload?.method === 'eth_sendTransaction' && result && !error) {
+  if (
+    ['eth_sendTransaction', 'eth_sendRawTransaction'].includes(
+      payload?.method
+    ) &&
+    result &&
+    !error
+  ) {
     if (updatedResults[pkpAddress]) {
       updatedResults[pkpAddress] = [newResult, ...updatedResults[pkpAddress]];
     } else {

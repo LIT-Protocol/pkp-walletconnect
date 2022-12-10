@@ -6,7 +6,9 @@ export default function ResultCard({ resultData }) {
   const { appChains } = useAppState();
   let blockExplorerUrl = null;
   if (
-    resultData.payload?.method === 'eth_sendTransaction' &&
+    ['eth_sendTransaction', 'eth_sendRawTransaction'].includes(
+      resultData.payload?.method
+    ) &&
     resultData.result?.chainId
   ) {
     const chain = getChain(resultData.result.chainId, appChains);
@@ -33,6 +35,9 @@ export default function ResultCard({ resultData }) {
       break;
     case 'eth_sendTransaction':
       title = 'Send transaction';
+      break;
+    case 'eth_sendRawTransaction':
+      title = 'Send raw transaction';
       break;
     default:
       title = `${payload.method} (unsupported)`;
