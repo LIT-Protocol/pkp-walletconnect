@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppState } from '../context/AppContext';
-import { getChain, truncateAddress } from '../utils/helpers';
+import useWalletConnect from '../hooks/useWalletConnect';
+import { getChain } from '../utils/helpers';
 import ConnectDapp from './ConnectDapp';
 import Footer from './Footer';
 import WalletConnectModal from './WalletConnectModal';
@@ -13,8 +14,10 @@ const DashboardViews = {
 export default function Dashboard() {
   const { currentUsername, currentPKP, wcConnector, appChainId, appChains } =
     useAppState();
+  const wcConnect = useWalletConnect();
 
   const [view, setView] = useState(DashboardViews.HOME);
+  // const [peerMeta, setPeerMeta] = useState(null);
 
   const chain = getChain(appChainId, appChains);
 
@@ -23,6 +26,17 @@ export default function Dashboard() {
   function goBack() {
     setView(DashboardViews.HOME);
   }
+
+  useEffect(() => {
+    // If there's a stored WalletConnect session, try to re-connect
+    if (wcConnector && !wcConnector.connected) {
+      const storedWc = localStorage.getItem('walletconnect');
+      if (storedWc) {
+        const parsedWc = JSON.parse(storedWc);
+        wcConnect({ session: parsedWc });
+      }
+    }
+  }, [wcConnector, wcConnect]);
 
   return (
     <>

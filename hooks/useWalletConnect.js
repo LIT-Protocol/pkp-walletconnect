@@ -17,7 +17,6 @@ const useWalletConnect = () => {
         url: 'https://litprotocol.com',
         name: 'Lit PKP Wallet',
       },
-      storageId: `walletconnect_${key}`,
     });
 
     // console.log('Created connector', wcConnector);
