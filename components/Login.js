@@ -79,7 +79,7 @@ export default function Login() {
         `${relayServerUrl}/generate-registration-options?username=${username}`,
         {
           method: 'GET',
-          credentials: 'include',
+          // credentials: 'include',
           headers: {
             'api-key': relayApiKey,
           },
@@ -109,7 +109,7 @@ export default function Login() {
       const attResp = await startRegistration(
         publicKeyCredentialCreationOptions
       );
-      // console.log('attResp', attResp);
+      console.log('attResp', attResp);
 
       // Send the credential to the relying party for verification
       let verificationJSON = null;
@@ -119,7 +119,7 @@ export default function Login() {
           `${relayServerUrl}/verify-registration`,
           {
             method: 'POST',
-            credentials: 'include',
+            // credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
               'api-key': relayApiKey,
@@ -189,7 +189,7 @@ export default function Login() {
         `${relayServerUrl}/generate-authentication-options`,
         {
           method: 'GET',
-          credentials: 'include',
+          // credentials: 'include',
           headers: {
             'api-key': relayApiKey,
           },
@@ -216,42 +216,8 @@ export default function Login() {
       const asseResp = await startAuthentication(
         publicKeyCredentialRequestOptions
       );
-      // console.log('asseResp', asseResp);
-
-      // Send the credential to the relying party for verification
-      let verificationJSON = null;
-
-      try {
-        const verificationResp = await fetch(
-          `${relayServerUrl}/verify-authentication`,
-          {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json',
-              'api-key': relayApiKey,
-            },
-            body: JSON.stringify(asseResp),
-          }
-        );
-
-        verificationJSON = await verificationResp.json();
-      } catch (e) {
-        console.error(e);
-        setError('Something went wrong with our server. Please try again.');
-        return;
-      }
-
-      if (verificationJSON && verificationJSON.verified) {
-        await handleAuthenticated(asseResp);
-        return;
-      } else {
-        setError('Failed to authenticate your passkey. Please try again.');
-        console.error('Error during WebAuthn authentication', {
-          err: JSON.stringify(verificationJSON),
-        });
-        return;
-      }
+      console.log('asseResp', asseResp);
+      await handleAuthenticated(asseResp);
     } catch (error) {
       console.error(error);
       setError('Unable to authenticate your passkey. Please try again.');
@@ -276,26 +242,39 @@ export default function Login() {
 
     const signature = base64url.toBuffer(asseResp.response.signature);
 
-    let currentPKP = null;
+    // Send the credential to the relying party for verification
+    let verificationJSON = null;
 
     try {
-      currentPKP = await mintPKP(
-        ethers.utils.hexlify(signature),
-        ethers.utils.hexlify(signatureBase),
-        webAuthnCredentialPublicKey
+      const verificationResp = await fetch(
+        `${relayServerUrl}/verify-authentication`,
+        {
+          method: 'POST',
+          // credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'api-key': relayApiKey,
+          },
+          body: JSON.stringify({
+            signature: ethers.utils.hexlify(signature),
+            signatureBase: ethers.utils.hexlify(signatureBase),
+            credentialPublicKey: webAuthnCredentialPublicKey,
+          }),
+        }
       );
+
+      verificationJSON = await verificationResp.json();
     } catch (e) {
       console.error(e);
-      setError(
-        'Something went wrong with minting your wallet. Please try again.'
-      );
+      setError('Something went wrong with our server. Please try again.');
       return;
     }
 
-    if (currentPKP) {
+    if (verificationJSON && verificationJSON.verified) {
+      let currentPKP = null;
+
       try {
-        await createSession(
-          currentPKP,
+        currentPKP = await mintPKP(
           ethers.utils.hexlify(signature),
           ethers.utils.hexlify(signatureBase),
           webAuthnCredentialPublicKey
@@ -303,10 +282,33 @@ export default function Login() {
       } catch (e) {
         console.error(e);
         setError(
-          'Something went wrong with creating your session. Please try again.'
+          'Something went wrong with minting your wallet. Please try again.'
         );
         return;
       }
+
+      if (currentPKP) {
+        try {
+          await createSession(
+            currentPKP,
+            ethers.utils.hexlify(signature),
+            ethers.utils.hexlify(signatureBase),
+            webAuthnCredentialPublicKey
+          );
+        } catch (e) {
+          console.error(e);
+          setError(
+            'Something went wrong with creating your session. Please try again.'
+          );
+          return;
+        }
+      }
+    } else {
+      setError('Failed to authenticate your passkey. Please try again.');
+      console.error('Error during WebAuthn authentication', {
+        err: JSON.stringify(verificationJSON),
+      });
+      return;
     }
   }
 

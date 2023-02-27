@@ -64,7 +64,7 @@ export default function SessionRequest({ payload }) {
             {peerMeta?.icons?.length > 0 ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                className="w-12 h-12 rounded-full object-contain"
+                className="relative w-12 h-12 rounded-full object-contain"
                 src={peerMeta.icons[0]}
                 alt={peerMeta?.name ? peerMeta.name : 'unknown app'}
               />
@@ -75,7 +75,7 @@ export default function SessionRequest({ payload }) {
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="w-12 h-12 p-3 rounded-full bg-indigo-100 text-indigo-500"
+                className="relative w-12 h-12 p-3 rounded-full bg-indigo-100 text-indigo-500"
               >
                 <path
                   strokeLinecap="round"
@@ -111,7 +111,7 @@ export default function SessionRequest({ payload }) {
           to your cloud wallet.
         </p>
 
-        <div className="relative flex items-center justify-between mt-4 p-3 border border-base-800">
+        <div className="flex items-center justify-between mt-4 p-3 border border-base-800">
           <div className="flex items-center">
             <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-indigo-500 mr-3"></span>
             <div className="flex flex-col text-sm">
