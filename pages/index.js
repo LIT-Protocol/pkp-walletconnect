@@ -1,63 +1,87 @@
-import { useAccount } from 'wagmi';
-import { useAppState } from '../context/AppContext';
-import useHasMounted from '../hooks/useHasMounted';
-import MintPKP from '../components/MintPKP';
-import ConnectTab from '../components/tabs/ConnectTab';
-import SessionRequest from '../components/SessionRequest';
-import CallRequest from '../components/CallRequest';
-import ConnectWallet from '../components/ConnectWallet';
-import Loading from '../components/Loading';
-import Layout from '../components/Layout';
-import HomeTab from '../components/tabs/HomeTab';
-import ActivityTab from '../components/tabs/ActivityTab';
-import InfoTab from '../components/tabs/InfoTab';
 import Head from 'next/head';
+import Login from '../components/Login';
+import { useState } from 'react';
+import Dashboard from '../components/Dashboard';
+import { useAppState } from '../context/AppContext';
+import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
+import { useEffect } from 'react';
 
 export default function Home() {
-  // wagmi
-  const { isConnected } = useAccount();
+  const { isAuthenticated } = useAppState();
 
-  // app state
-  const state = useAppState();
+  const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(true);
 
-  // ui state
-  const hasMounted = useHasMounted();
+  useEffect(() => {
+    const supported =
+      browserSupportsWebAuthn() && !navigator.userAgent.includes('Firefox');
+    setIsWebAuthnSupported(supported);
+  }, []);
 
-  if (!hasMounted) {
-    return null;
-  }
-
-  if (!isConnected) {
-    return <ConnectWallet />;
+  if (!isWebAuthnSupported) {
+    return (
+      <>
+        <Head>
+          <title>Lit x WebAuthn | Lit Protocol</title>
+          <meta
+            name="description"
+            content="The most secure and customizable wallet that's 100% yours."
+          />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+        <div>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-10 h-10 text-red-500"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+            />
+          </svg>
+          <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
+            Browser not supported
+          </h1>
+          <p className="mb-6">
+            Unfortunately, your browser does not support platform
+            authenticators. Try visiting this demo on Chrome, Safari, Brave, or
+            Edge.
+          </p>
+          <p>
+            Refer to{' '}
+            <a
+              href="https://webauthn.me/browser-support"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-base-500"
+            >
+              this table
+            </a>{' '}
+            for a more comprehensive list of supported browsers and operating
+            systems.
+          </p>
+        </div>
+      </>
+    );
   }
 
   return (
-    <Layout>
+    <>
       <Head>
-        <title>PKP WalletConnect</title>
+        <title>Lit x WebAuthn | Lit Protocol</title>
+        <meta
+          name="description"
+          content="The most secure and customizable wallet that's 100% yours."
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
-      {state.loading ? (
-        <Loading />
-      ) : state.currentPKPAddress ? (
-        <>
-          {state.wcRequests.length > 0 ? (
-            state.wcRequests[0].method === 'session_request' ? (
-              <SessionRequest payload={state.wcRequests[0]} />
-            ) : (
-              <CallRequest payload={state.wcRequests[0]} />
-            )
-          ) : (
-            <>
-              {state.tab === 1 && <HomeTab />}
-              {state.tab === 2 && <ConnectTab />}
-              {state.tab === 3 && <ActivityTab />}
-              {state.tab === 4 && <InfoTab />}
-            </>
-          )}
-        </>
-      ) : (
-        <MintPKP />
-      )}
-    </Layout>
+      {isAuthenticated ? <Dashboard /> : <Login />}
+    </>
   );
 }

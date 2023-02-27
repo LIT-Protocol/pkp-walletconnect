@@ -1,29 +1,30 @@
 import converter from 'hex2dec';
 import { ethers } from 'ethers';
 import { convertHexToNumber } from '@walletconnect/utils';
-import { getPKPNFTTokenIdsByAddress, getPubkey } from './contracts';
+import { getTokenIdsForAuthMethod, getPubkey } from './contracts';
+import { AuthMethodTypes } from './constants';
 
-export const a11yProps = index => {
+export function a11yProps(index) {
   return {
     id: `simple-tab-${index}`,
     'aria-controls': `simple-tabpanel-${index}`,
   };
-};
+}
 
-export const truncate = str => {
+export function truncateAddress(str) {
   return `${str.substring(0, 5)}...${str.substring(str.length - 5)}`;
-};
+}
 
-export const replaceWithBreaks = str => {
+export function replaceWithBreaks(str) {
   try {
     const newStr = str.replace(/\n/g, '<br />');
     return newStr;
   } catch (e) {
     return str;
   }
-};
+}
 
-export const wei2eth = value => {
+export function wei2eth(value) {
   let cost = {
     wei: value,
     // eth: ethers.utils.formatEther(value),
@@ -32,11 +33,11 @@ export const wei2eth = value => {
   };
 
   return cost;
-};
+}
 
-export const hexToDecimal = value => {
+export function hexToDecimal(value) {
   return converter.hexToDec(value);
-};
+}
 
 export function convertHexToUtf8(value) {
   try {
@@ -49,7 +50,7 @@ export function convertHexToUtf8(value) {
   }
 }
 
-export const getTransactionToSign = txParams => {
+export function getTransactionToSign(txParams) {
   let formattedTx = Object.assign({}, txParams);
 
   if (formattedTx.gas) {
@@ -62,106 +63,121 @@ export const getTransactionToSign = txParams => {
   }
 
   return formattedTx;
-};
+}
 
-export const getChain = (chainId, chains) => {
+export function getChain(chainId, chains) {
   if (chainId) {
-    const chain = Object.values(chains).find(
-      chain => chain.chainId === chainId
-    );
+    const chain = chains.find(chain => chain.chainId === chainId);
     return chain;
   }
   return null;
-};
+}
 
-export const getRPCUrl = (chainId, chains) => {
+export function getRPCUrl(chainId, chains) {
   if (chainId) {
     const chain = getChain(chainId, chains);
     const rpcUrl = chain?.rpcUrls[0] ? chain.rpcUrls[0] : null;
     return rpcUrl;
   }
   return null;
-};
+}
 
-export const renderRequest = (payload, peerMeta, chains) => {
-  let title;
-  let description;
-  let message;
-  let data;
+export function renderTxDetails(payload) {
+  let txDetails = [
+    { label: 'From', value: payload.params[0].from },
+    { label: 'To', value: payload.params[0].to },
+    {
+      label: 'Gas Limit',
+      value: payload.params[0].gas
+        ? convertHexToNumber(payload.params[0].gas)
+        : payload.params[0].gasLimit
+        ? convertHexToNumber(payload.params[0].gasLimit)
+        : '',
+    },
+    {
+      label: 'Gas Price',
+      value: convertHexToNumber(payload.params[0].gasPrice),
+    },
+    {
+      label: 'Nonce',
+      value: convertHexToNumber(payload.params[0].nonce),
+    },
+    {
+      label: 'Value',
+      value: payload.params[0].value
+        ? convertHexToNumber(payload.params[0].value)
+        : '',
+    },
+    { label: 'Data', value: payload.params[0].data },
+  ];
+  return txDetails;
+}
 
-  const appName = peerMeta?.name ? peerMeta.name : 'An unknown app';
+export function getWebAuthnAuthMethodId(username) {
+  return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${username}:lit`));
+}
 
-  switch (payload.method) {
-    case 'eth_sign':
-      title = 'Sign message';
-      description = `${appName} wants you to sign the following message:`;
-      message = convertHexToUtf8(payload.params[1]);
-      break;
-    case 'personal_sign':
-      title = 'Sign message';
-      description = `${appName} wants you to sign the following message:`;
-      message = convertHexToUtf8(payload.params[0]);
-      break;
-    case 'eth_signTypedData':
-    case 'eth_signTypedData_v1':
-    case 'eth_signTypedData_v3':
-    case 'eth_signTypedData_v4':
-      title = 'Sign typed data';
-      description = `${appName} wants you to sign the following typed data:`;
-      data = JSON.stringify(JSON.parse(payload.params[1]), null, 2);
-      break;
-    case 'eth_signTransaction':
-      title = 'Sign transaction';
-      description = `${appName} wants you to sign the following transaction:`;
-      data = JSON.stringify(getTransactionToSign(payload.params[0]), null, 2);
-      break;
-    case 'eth_sendTransaction':
-      title = 'Send transaction';
-      description = `${appName} wants you to sign and send the following transaction:`;
-      data = JSON.stringify(getTransactionToSign(payload.params[0]), null, 2);
-      break;
-    case 'eth_sendRawTransaction':
-      title = 'Send raw transaction';
-      description = `${appName} wants you to send the following raw transaction:`;
-      data = payload.params[0];
-      break;
-    case 'wallet_addEthereumChain':
-      title = 'Add network';
-      description = `${appName} wants you to add the following network:`;
-      data = JSON.stringify(payload.params[0], null, 2);
-      break;
-    case 'wallet_switchEthereumChain':
-      title = 'Switch network';
-      description = `${appName} wants you to switch to the following network:`;
-      const newChainId = convertHexToNumber(payload.params[0].chainId);
-      const newChain = getChain(newChainId, chains);
-      data = JSON.stringify(newChain, null, 2);
-      break;
-    default:
-      title = 'Unsupported request';
-      description = `Unable to handle this request: ${payload.method}.`;
-      data = params;
+export function getDefaultAuthNeededCallback(authMethods, pkpPublicKey) {
+  const defaultCallback = async ({
+    chain,
+    resources,
+    expiration,
+    uri,
+    litNodeClient,
+  }) => {
+    const sessionSig = await litNodeClient.signSessionKey({
+      sessionKey: uri,
+      authMethods: authMethods,
+      pkpPublicKey: pkpPublicKey,
+      expiration,
+      resources,
+      chain,
+    });
+    return sessionSig;
+  };
+
+  return defaultCallback;
+}
+
+export async function getPKPPublicKeyByWebAuthnId(id) {
+  const tokenIds = await getTokenIdsForAuthMethod(AuthMethodTypes.WEBAUTHN, id);
+  if (tokenIds.length === 0) {
+    return null;
+  }
+  // Username:credentialPubKey is 1:1 for now
+  const pkpPublicKey = await getPubkey(tokenIds[0]);
+  return pkpPublicKey;
+}
+
+export async function getPKPsForAuthMethod({
+  authMethodType,
+  idForAuthMethod,
+}) {
+  if (!authMethodType || !idForAuthMethod) {
+    throw new Error(
+      'Auth method type and id are required to fetch PKPs by auth method'
+    );
   }
 
-  return { title, description, message, data };
-};
-
-// Fetch PKPs by address
-export const fetchPKPsByAddress = async address => {
-  const tokenIds = await getPKPNFTTokenIdsByAddress(address);
-  let pkps = {};
-
-  if (tokenIds.length > 0) {
+  try {
+    const tokenIds = await getTokenIdsForAuthMethod(
+      authMethodType,
+      idForAuthMethod
+    );
+    const pkps = [];
     for (let i = 0; i < tokenIds.length; i++) {
       const pubkey = await getPubkey(tokenIds[i]);
-      const ethAddress = ethers.utils.computeAddress(pubkey);
-      pkps[ethAddress] = {
-        tokenId: tokenIds[i],
-        publicKey: pubkey,
-        address: ethAddress,
-      };
+      if (pubkey) {
+        const ethAddress = ethers.utils.computeAddress(pubkey);
+        pkps.push({
+          tokenId: tokenIds[i],
+          publicKey: pubkey,
+          ethAddress: ethAddress,
+        });
+      }
     }
+    return pkps;
+  } catch (err) {
+    throw new Error('Unable to get PKPs for auth method');
   }
-
-  return pkps;
-};
+}

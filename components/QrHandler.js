@@ -17,10 +17,10 @@ export default function QrHandler({ wcConnect }) {
   );
 
   return (
-    <div className="qr-reader">
+    <div className="w-full flex flex-1 flex-col items-center justify-center">
       {show ? (
         <Fragment>
-          <div className="qr-reader__mask">
+          <div className="w-full relative overflow-hidden">
             <QrReader
               style={{ width: '100%' }}
               onResult={(result, error) => {
@@ -32,14 +32,17 @@ export default function QrHandler({ wcConnect }) {
           </div>
         </Fragment>
       ) : (
-        <div className="scan-qr vertical-stack">
+        <button
+          className="flex flex-col items-center border border-base-800 border-dashed py-6 px-4 w-full mt-2 text-sm hover:bg-base-1000 focus:outline-none focus:ring-2 focus:ring-base-700 focus:ring-offset-2"
+          onClick={onShowScanner}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
-            strokeWidth="1.5"
+            strokeWidth="1"
             stroke="currentColor"
-            className="qrIcon"
+            className="w-16 h-16 mb-2"
           >
             <path
               strokeLinecap="round"
@@ -52,10 +55,8 @@ export default function QrHandler({ wcConnect }) {
               d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z"
             />
           </svg>
-          <button className="scan-qr__btn" onClick={onShowScanner}>
-            Scan QR code
-          </button>
-        </div>
+          <span>Scan QR code</span>
+        </button>
       )}
     </div>
   );
