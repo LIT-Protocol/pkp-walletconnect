@@ -115,9 +115,7 @@ export default function SessionRequest({ payload }) {
           <div className="flex items-center">
             <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-indigo-500 mr-3"></span>
             <div className="flex flex-col text-sm">
-              <span className="text-base-300 font-medium">
-                {currentUsername ? currentUsername : 'My wallet'}
-              </span>
+              <span className="text-base-300 font-medium">My cloud wallet</span>
               <span>{truncateAddress(currentPKP.ethAddress)}</span>
             </div>
           </div>

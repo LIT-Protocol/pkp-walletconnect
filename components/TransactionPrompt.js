@@ -37,17 +37,10 @@ export default function TransactionPrompt({ payload, peerMeta }) {
         detail =>
           detail.value && (
             <div key={detail.label} className="mt-4">
-              <label htmlFor={detail.label} className="block text-sm mb-2">
-                {detail.label}
-              </label>
-              <input
-                type={detail.label}
-                name={detail.label}
-                id={detail.label}
-                defaultValue={detail.value}
-                disabled
-                className="block w-full border border-transparent bg-base-1000 text-sm disabled:cursor-not-allowed disabled:text-base-600"
-              />
+              <p className="block text-sm mb-2">{detail.label}</p>
+              <p className="block w-full border border-base-800 bg-base-1000 text-sm p-1 break-all">
+                {detail.value}
+              </p>
             </div>
           )
       )}

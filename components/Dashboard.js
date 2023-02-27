@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAppState } from '../context/AppContext';
 import useWalletConnect from '../hooks/useWalletConnect';
-import { getChain } from '../utils/helpers';
+import { getChain, truncateAddress } from '../utils/helpers';
 import ConnectDapp from './ConnectDapp';
+import CopyBtn from './CopyBtn';
 import Footer from './Footer';
 import WalletConnectModal from './WalletConnectModal';
 
@@ -17,11 +18,8 @@ export default function Dashboard() {
   const wcConnect = useWalletConnect();
 
   const [view, setView] = useState(DashboardViews.HOME);
-  // const [peerMeta, setPeerMeta] = useState(null);
 
   const chain = getChain(appChainId, appChains);
-
-  const peerMeta = wcConnector ? wcConnector.peerMeta : null;
 
   function goBack() {
     setView(DashboardViews.HOME);
@@ -61,85 +59,56 @@ export default function Dashboard() {
               gm
             </h1>
             <div className="bg-base-100 bg-opacity-5 p-4 sm:p-6 mb-10">
-              <div className="flex items-center mb-4 text-base-200">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5 mr-2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3"
-                  />
-                </svg>
-                <h3 className="font-medium">
-                  {currentUsername ? currentUsername : 'My wallet'}
-                </h3>
-              </div>
+              <h3 className="text-xs text-base-500 uppercase mb-5">
+                My cloud wallet
+              </h3>
               <div>
                 <h3 className="text-xs text-base-500 uppercase mb-1">
                   Eth address
                 </h3>
-                <p className="text-base-300 text-sm sm:text-base break-all">
-                  {currentPKP.ethAddress}
-                </p>
-              </div>
-              {/* <div className="mt-4">
-                <h2 className="text-xs text-base-500 uppercase mb-1">
-                  Public key
-                </h2>
-                <p className="text-base-300 break-all">
-                  {currentPKP.publicKey}
-                </p>
-              </div> */}
-            </div>
-
-            {wcConnector && (
-              <div className="mb-10">
-                <h2 className="text-base font-medium text-base-300 mb-4">
-                  Connected
-                </h2>
-                <div className="bg-base-100 bg-opacity-5 p-6 flex items-start">
-                  {peerMeta?.icons.length > 0 && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={peerMeta?.icons[0]}
-                      alt={peerMeta?.name ? peerMeta.name : 'Unknown app'}
-                      className="w-10 h-10 mr-4"
-                    />
-                  )}
-                  <div>
-                    <h3 className="font-medium text-base-300">
-                      {peerMeta?.name ? peerMeta?.name : 'Unknown app'}
-                    </h3>
-                    {peerMeta?.url && (
-                      <a
-                        href={peerMeta.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm underline hover:text-base-500"
-                      >
-                        {peerMeta.url}
-                      </a>
-                    )}
-                  </div>
+                <div className="flex items-center">
+                  <p className="text-base-300 text-sm sm:text-base break-all mr-2">
+                    {truncateAddress(currentPKP.ethAddress)}
+                  </p>
+                  <CopyBtn textToCopy={currentPKP.ethAddress} />
                 </div>
               </div>
-            )}
+              <div className="mt-4">
+                <h2 className="text-xs text-base-500 uppercase mb-1">
+                  Owned by
+                </h2>
+                <div className="flex items-center">
+                  <p className="text-sm sm:text-base text-base-300">
+                    <span className="font-medium">{currentUsername}</span>{' '}
+                    passkey
+                  </p>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4 ml-2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
 
             <div>
               <h2 className="text-base font-medium text-base-300 mb-4">
-                For you
+                Explore
               </h2>
               <button
                 className="w-full flex items-center justify-between p-4 sm:p-6 border border-base-800 hover:bg-base-1000"
                 onClick={() => setView(DashboardViews.CONNECT_DAPP)}
               >
-                <div className="flex items-start">
+                <div className="flex flex-col items-start mr-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"

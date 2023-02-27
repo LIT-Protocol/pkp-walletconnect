@@ -1,5 +1,5 @@
 export const STATE_KEY = 'lit-demo-state';
-export const DEFAULT_CHAIN_ID = 80001;
+export const DEFAULT_CHAIN_ID = 5;
 export const LIT_CHAINS = [
   {
     chainId: 1,
@@ -54,7 +54,9 @@ export const LIT_CHAINS = [
     name: 'Goerli',
     symbol: 'ETH',
     decimals: 18,
-    rpcUrls: ['https://goerli.infura.io/v3/96dffb3d8c084dec952c61bd6230af34'],
+    rpcUrls: [
+      'https://eth-goerli.g.alchemy.com/v2/KRnJnphdws3ycVi3v0t9UmGSz8AIrnFA',
+    ],
     blockExplorerUrls: ['https://goerli.etherscan.io'],
     type: 'ERC1155',
     vmType: 'EVM',

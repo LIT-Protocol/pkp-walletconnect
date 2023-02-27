@@ -30,6 +30,7 @@ export default function appReducer(state, action) {
       return {
         ...state,
         wcConnector: null,
+        wcRequests: [],
       };
     }
     case 'pending_request': {
@@ -52,10 +53,11 @@ export default function appReducer(state, action) {
       return {
         ...state,
         appChainId: action.appChainId,
+        wcConnector: action.wcConnector,
       };
     }
     case 'add_chain': {
-      const updatedChains = addChain(action.chain, state.appChains);
+      const updatedChains = addChain(action.newChain, state.appChains);
       return {
         ...state,
         appChains: updatedChains,

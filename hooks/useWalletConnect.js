@@ -1,13 +1,12 @@
 import { useAppDispatch } from '../context/AppContext';
 import WalletConnect from '@walletconnect/client';
-import { parseWalletConnectUri } from '@walletconnect/legacy-utils';
 
 const useWalletConnect = () => {
   const dispatch = useAppDispatch();
 
   // Initialize WalletConnect connector
   async function wcConnect({ uri, session }) {
-    let key = uri ? parseWalletConnectUri(uri).key : session.key;
+    // let key = uri ? parseWalletConnectUri(uri).key : session.key;
 
     const wcConnector = new WalletConnect({
       uri: uri,

@@ -65,77 +65,91 @@ export default function Login() {
 
     // Check if username is set
     if (!username) {
-      const noUsernameErr = new Error('Wallet name is required');
+      const noUsernameErr = new Error('Passkey name is required');
       console.error(noUsernameErr);
       setError(noUsernameErr.message);
       return;
     }
 
-    // Get registration options from the relying party
-    const optionsRes = await fetch(
-      `${relayServerUrl}/generate-registration-options?username=${username}`,
-      {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'api-key': relayApiKey,
-        },
-      }
-    );
-    if (optionsRes.status < 200 || optionsRes.status >= 400) {
-      const relayErr = new Error(
-        'Failed to fetch registration options from relay server'
+    // Generate registration options for the browser to pass to a supported authenticator
+    let publicKeyCredentialCreationOptions = null;
+
+    try {
+      const optionsRes = await fetch(
+        `${relayServerUrl}/generate-registration-options?username=${username}`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'api-key': relayApiKey,
+          },
+        }
       );
-      console.error(relayErr);
-      setError(relayErr.message);
+      if (optionsRes.status < 200 || optionsRes.status >= 400) {
+        const relayErr = new Error(
+          'Something went wrong with our server. Please try again.'
+        );
+        console.error('Relay server error: ', optionsRes);
+        setError(relayErr.message);
+        return;
+      }
+
+      // Pass the options to the authenticator and wait for a response
+      publicKeyCredentialCreationOptions = await optionsRes.json();
+    } catch (e) {
+      console.error(e);
+      setError('Something went wrong with our server. Please try again.');
       return;
     }
-
-    // Pass the options to the authenticator and wait for a response
-    const publicKeyCredentialCreationOptions = await optionsRes.json();
 
     try {
       setView(LoginViews.REGISTERING);
 
-      // Create a new credential
+      // Submit registration options to the authenticator
       const attResp = await startRegistration(
         publicKeyCredentialCreationOptions
       );
       // console.log('attResp', attResp);
 
       // Send the credential to the relying party for verification
-      const verificationResp = await fetch(
-        `${relayServerUrl}/verify-registration`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'api-key': relayApiKey,
-          },
-          body: JSON.stringify(attResp),
-        }
-      );
+      let verificationJSON = null;
 
-      const verificationJSON = await verificationResp.json();
+      try {
+        const verificationResp = await fetch(
+          `${relayServerUrl}/verify-registration`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': relayApiKey,
+            },
+            body: JSON.stringify(attResp),
+          }
+        );
+
+        verificationJSON = await verificationResp.json();
+      } catch (e) {
+        console.error(e);
+        setError('Something went wrong with our server. Please try again.');
+        return;
+      }
 
       // If the credential was verified, continue to authentication step
       if (verificationJSON && verificationJSON.verified) {
         await handleRegistered(attResp);
-        setView(LoginViews.AUTHENTICATE);
+        return;
       } else {
-        setError('Oh no, something went wrong when creating a passkey.');
+        setError('Failed to register your passkey. Please try again.');
         console.error('Error during WebAuthn registration', {
           err: JSON.stringify(verificationJSON),
         });
+        return;
       }
     } catch (error) {
       console.error(error);
-      if (error.message) {
-        setError(error.message);
-      } else {
-        setError('Unable to register your device. Please try again.');
-      }
+      setError('Unable to register your passkey. Please try again.');
+      return;
     }
   }
 
@@ -148,13 +162,11 @@ export default function Login() {
 
     const parsedAuthData = parseAuthenticatorData(cbor, authData);
 
-    // console.log('storing credential public key in browser', {
-    //   credentialPublicKey: parsedAuthData.credentialPublicKey,
-    // });
-
     setWebAuthnCredentialPublicKey(
       ethers.utils.hexlify(parsedAuthData.credentialPublicKey)
     );
+
+    setView(LoginViews.AUTHENTICATE);
   }
 
   // Authenticate with WebAuthn credential and mint PKP
@@ -163,33 +175,41 @@ export default function Login() {
 
     // Check if username is set
     if (!username) {
-      const noUsernameErr = new Error('Wallet name is required');
+      const noUsernameErr = new Error('Passkey name is required');
       console.error(noUsernameErr);
       setError(noUsernameErr.message);
       return;
     }
 
     // Get authentication options from the relying party
-    const optionsRes = await fetch(
-      `${relayServerUrl}/generate-authentication-options?username=${username}`,
-      {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'api-key': relayApiKey,
-        },
-      }
-    );
-    if (optionsRes.status < 200 || optionsRes.status >= 400) {
-      const relayErr = new Error(
-        'Failed to fetch authentication options from relay server'
+    let publicKeyCredentialRequestOptions = null;
+
+    try {
+      const optionsRes = await fetch(
+        `${relayServerUrl}/generate-authentication-options`,
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'api-key': relayApiKey,
+          },
+        }
       );
-      console.error(relayErr);
-      setError(relayErr.message);
+      if (optionsRes.status < 200 || optionsRes.status >= 400) {
+        const relayErr = new Error(
+          'Something went wrong with our server. Please try again.'
+        );
+        console.error('Relay server error: ', optionsRes);
+        setError(relayErr.message);
+        return;
+      }
+
+      publicKeyCredentialRequestOptions = await optionsRes.json();
+    } catch (e) {
+      console.error(e);
+      setError('Something went wrong with our server. Please try again.');
       return;
     }
-
-    const publicKeyCredentialRequestOptions = await optionsRes.json();
 
     try {
       // Pass the options to the authenticator and wait for a response
@@ -198,38 +218,44 @@ export default function Login() {
       );
       // console.log('asseResp', asseResp);
 
-      const verificationResp = await fetch(
-        `${relayServerUrl}/verify-authentication`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'api-key': relayApiKey,
-          },
-          body: JSON.stringify(asseResp),
-        }
-      );
+      // Send the credential to the relying party for verification
+      let verificationJSON = null;
 
-      const verificationJSON = await verificationResp.json();
+      try {
+        const verificationResp = await fetch(
+          `${relayServerUrl}/verify-authentication`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': relayApiKey,
+            },
+            body: JSON.stringify(asseResp),
+          }
+        );
+
+        verificationJSON = await verificationResp.json();
+      } catch (e) {
+        console.error(e);
+        setError('Something went wrong with our server. Please try again.');
+        return;
+      }
 
       if (verificationJSON && verificationJSON.verified) {
         await handleAuthenticated(asseResp);
+        return;
       } else {
-        setError(
-          'Oh no, something went wrong when authenticating your passkey.'
-        );
+        setError('Failed to authenticate your passkey. Please try again.');
         console.error('Error during WebAuthn authentication', {
           err: JSON.stringify(verificationJSON),
         });
+        return;
       }
     } catch (error) {
       console.error(error);
-      if (error.message) {
-        setError(error.message);
-      } else {
-        setError('Unable to authenticate your device. Please try again.');
-      }
+      setError('Unable to authenticate your passkey. Please try again.');
+      return;
     }
   }
 
@@ -250,19 +276,37 @@ export default function Login() {
 
     const signature = base64url.toBuffer(asseResp.response.signature);
 
-    let currentPKP = await mintPKP(
-      ethers.utils.hexlify(signature),
-      ethers.utils.hexlify(signatureBase),
-      webAuthnCredentialPublicKey
-    );
+    let currentPKP = null;
 
-    if (currentPKP) {
-      await createSession(
-        currentPKP,
+    try {
+      currentPKP = await mintPKP(
         ethers.utils.hexlify(signature),
         ethers.utils.hexlify(signatureBase),
         webAuthnCredentialPublicKey
       );
+    } catch (e) {
+      console.error(e);
+      setError(
+        'Something went wrong with minting your wallet. Please try again.'
+      );
+      return;
+    }
+
+    if (currentPKP) {
+      try {
+        await createSession(
+          currentPKP,
+          ethers.utils.hexlify(signature),
+          ethers.utils.hexlify(signatureBase),
+          webAuthnCredentialPublicKey
+        );
+      } catch (e) {
+        console.error(e);
+        setError(
+          'Something went wrong with creating your session. Please try again.'
+        );
+        return;
+      }
     }
   }
 
@@ -470,7 +514,7 @@ export default function Login() {
                 htmlFor="username"
                 className="block text-base text-base-300"
               >
-                Your new cloud wallet&apos;s name
+                Your passkey name
               </label>
               <div className="mt-1">
                 <input
@@ -478,13 +522,14 @@ export default function Login() {
                   type="text"
                   autoComplete="username webauthn"
                   aria-describedby="username-field"
+                  placeholder='e.g. "Eth Denver 2023"'
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   className="block w-full border border-transparent bg-base-1000 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
               <p id="username-field" className="mt-2 text-sm font-light">
-                Name your cloud wallet to make it easier to remember.
+                Name your passkey to make it easier to remember.
               </p>
             </div>
             <button
@@ -513,7 +558,7 @@ export default function Login() {
             />
           </svg>
           <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
-            Register with your device
+            Register your passkey
           </h1>
           <p className="text-sm sm:text-base mb-6">
             Follow your browser&apos;s prompts to create a passkey.
@@ -558,7 +603,7 @@ export default function Login() {
             />
           </svg>
           <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
-            Authenticate with your device
+            Authenticate your passkey
           </h1>
           <p className="text-sm sm:text-base mb-6">
             Follow your browser&apos;s prompts to verify your identity.
@@ -567,20 +612,12 @@ export default function Login() {
       )}
       {view === LoginViews.MINTING && (
         <div>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="animate-pulse w-10 h-10 text-base-300"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V19.5m0 2.25l-2.25-1.313m0-16.875L12 2.25l2.25 1.313M21 14.25v2.25l-2.25 1.313m-13.5 0L3 16.5v-2.25"
-            />
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/loading.gif"
+            className="w-20 object-contain"
+            alt="Nyan Cat loading gif"
+          ></img>
 
           <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
             Minting wallet...

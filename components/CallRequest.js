@@ -1,6 +1,5 @@
 import { useAppState, useAppDispatch } from '../context/AppContext';
 import { LitPKP } from 'lit-pkp-sdk';
-import { convertHexToNumber } from '@walletconnect/legacy-utils';
 import { getChain, getRPCUrl, truncateAddress } from '../utils/helpers';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import SignMessagePrompt from './SignMessagePrompt';
@@ -9,10 +8,10 @@ import AddChainPrompt from './AddChainPrompt';
 import SwitchChainPrompt from './SwitchChainPrompt';
 import TransactionPrompt from './TransactionPrompt';
 import RawTransactionPrompt from './RawTransactionPrompt';
+import { ethers } from 'ethers';
 
 export default function CallRequest({ payload }) {
-  const { currentUsername, currentPKP, sessionSigs, appChains, wcConnector } =
-    useAppState();
+  const { currentPKP, sessionSigs, appChains, wcConnector } = useAppState();
 
   const dispatch = useAppDispatch();
 
@@ -65,10 +64,26 @@ export default function CallRequest({ payload }) {
         case 'eth_signTypedData_v1':
         case 'eth_signTypedData_v3':
         case 'eth_signTypedData_v4':
-        case 'eth_signTransaction':
-        case 'eth_sendTransaction':
         case 'eth_sendRawTransaction':
           // Sign with PKP Wallet
+          result = await wallet.signEthereumRequest(payload);
+          break;
+        case 'eth_signTransaction':
+        case 'eth_sendTransaction':
+          try {
+            const estGas = await wallet.rpcProvider.estimateGas(
+              payload.params[0]
+            );
+            // console.log('estGas', ethers.BigNumber.from(estGas).toNumber());
+
+            // Set gas limit
+            if (estGas) {
+              payload.params[0].gasLimit = estGas;
+            }
+          } catch (e) {
+            console.error('Err when adding fee data to tx payload', e);
+          }
+
           result = await wallet.signEthereumRequest(payload);
           break;
         case 'wallet_addEthereumChain':
@@ -78,7 +93,7 @@ export default function CallRequest({ payload }) {
           break;
         case 'wallet_switchEthereumChain':
           // Update WalletConnect session
-          const newChainId = convertHexToNumber(payload.params[0].chainId);
+          const newChainId = Number(payload.params[0].chainId);
           await switchChain(newChainId);
           result = null;
           break;
@@ -108,7 +123,7 @@ export default function CallRequest({ payload }) {
         wcConnector: wcConnector,
       });
     } catch (err) {
-      // console.log(err);
+      console.error(err);
 
       let errorMessage = 'Failed to approve WalletConnect request';
       if (err instanceof Error && err.message) {
@@ -131,12 +146,12 @@ export default function CallRequest({ payload }) {
   // Add chain to list of app chains
   function addChain(chainParams) {
     const newChain = chainParams;
-    const newChainId = convertHexToNumber(newChain.chainId);
+    const newChainId = Number(newChain.chainId);
     const network = getChain(newChainId, appChains);
     if (network) {
       dispatch({
         type: 'add_chain',
-        chain: newChain,
+        newChain: newChain,
       });
     } else {
       throw Error('Chain not supported');
@@ -146,7 +161,7 @@ export default function CallRequest({ payload }) {
 
   // // Update WalletConnect session to use new chain ID
   async function switchChain(newChainId) {
-    const network = getChain(newChainId, chains);
+    const network = getChain(newChainId, appChains);
     if (network) {
       updateSession(wcEthAddress, newChainId);
     } else {
@@ -163,7 +178,8 @@ export default function CallRequest({ payload }) {
         chainId: chainId,
       });
       dispatch({
-        type: 'update_connector',
+        type: 'switch_chain',
+        appChainId: chainId,
         wcConnector: wcConnector,
       });
     } catch (error) {
@@ -271,9 +287,7 @@ export default function CallRequest({ payload }) {
           <div className="flex items-center">
             <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 mr-3"></span>
             <div className="flex flex-col text-sm">
-              <span className="text-base-300 font-medium">
-                {currentUsername ? currentUsername : 'My wallet'}
-              </span>
+              <span className="text-base-300 font-medium">My cloud wallet</span>
               <span>{truncateAddress(wcEthAddress)}</span>
             </div>
           </div>

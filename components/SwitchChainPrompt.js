@@ -1,13 +1,12 @@
 import { useAppState } from '../context/AppContext';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
-import { CodeBlock, atomOneLight } from 'react-code-blocks';
-import { convertHexToNumber } from '@walletconnect/legacy-utils';
+import { CodeBlock, atomOneDark } from 'react-code-blocks';
 import { getChain } from '../utils/helpers';
 
 export default function SwitchChainPrompt({ payload, peerMeta }) {
   const { appChains } = useAppState();
 
-  const newChainId = convertHexToNumber(payload.params[0].chainId);
+  const newChainId = Number(payload.params[0].chainId);
   const newChain = getChain(newChainId, appChains);
   const data = newChain ? newChain : payload.params[0];
 
@@ -33,8 +32,8 @@ export default function SwitchChainPrompt({ payload, peerMeta }) {
       <div className="mt-2 text-xs">
         <CodeBlock
           showLineNumbers={false}
-          text={JSON.stringify(JSON.parse(data), null, 2)}
-          theme={atomOneLight}
+          text={JSON.stringify(data, null, 2)}
+          theme={atomOneDark}
           language="json"
         />
       </div>

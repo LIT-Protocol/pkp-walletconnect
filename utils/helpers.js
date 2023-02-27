@@ -1,6 +1,5 @@
 import converter from 'hex2dec';
 import { ethers } from 'ethers';
-import { convertHexToNumber } from '@walletconnect/utils';
 import { getTokenIdsForAuthMethod, getPubkey } from './contracts';
 import { AuthMethodTypes } from './constants';
 
@@ -50,21 +49,6 @@ export function convertHexToUtf8(value) {
   }
 }
 
-export function getTransactionToSign(txParams) {
-  let formattedTx = Object.assign({}, txParams);
-
-  if (formattedTx.gas) {
-    // formattedTx.gasLimit = formattedTx.gas;
-    delete formattedTx.gas;
-  }
-
-  if (formattedTx.from) {
-    delete formattedTx.from;
-  }
-
-  return formattedTx;
-}
-
 export function getChain(chainId, chains) {
   if (chainId) {
     const chain = chains.find(chain => chain.chainId === chainId);
@@ -84,31 +68,51 @@ export function getRPCUrl(chainId, chains) {
 
 export function renderTxDetails(payload) {
   let txDetails = [
-    { label: 'From', value: payload.params[0].from },
-    { label: 'To', value: payload.params[0].to },
+    {
+      label: 'From',
+      value: payload.params[0].from ? payload.params[0].from : '',
+    },
+    { label: 'To', value: payload.params[0].to ? payload.params[0].to : '' },
     {
       label: 'Gas Limit',
       value: payload.params[0].gas
-        ? convertHexToNumber(payload.params[0].gas)
+        ? ethers.BigNumber.from(payload.params[0].gas).toNumber()
         : payload.params[0].gasLimit
-        ? convertHexToNumber(payload.params[0].gasLimit)
+        ? ethers.BigNumber.from(payload.params[0].gasLimit).toNumber()
         : '',
     },
     {
       label: 'Gas Price',
-      value: convertHexToNumber(payload.params[0].gasPrice),
+      value: payload.params[0].gasPrice
+        ? ethers.BigNumber.from(payload.params[0].gasPrice).toNumber()
+        : '',
+    },
+    {
+      label: 'Max Fee Per Gas',
+      value: payload.params[0].maxFeePerGas
+        ? ethers.BigNumber.from(payload.params[0].maxFeePerGas).toNumber()
+        : '',
+    },
+    {
+      label: 'Max Priority Fee Per Gas',
+      value: payload.params[0].maxPriorityFeePerGas
+        ? ethers.BigNumber.from(
+            payload.params[0].maxPriorityFeePerGas
+          ).toNumber()
+        : '',
     },
     {
       label: 'Nonce',
-      value: convertHexToNumber(payload.params[0].nonce),
+      value: payload.params[0].nonce ? payload.params[0].nonce : '',
     },
     {
       label: 'Value',
-      value: payload.params[0].value
-        ? convertHexToNumber(payload.params[0].value)
-        : '',
+      value: payload.params[0].value ? payload.params[0].value : '',
     },
-    { label: 'Data', value: payload.params[0].data },
+    {
+      label: 'Data',
+      value: payload.params[0].data ? payload.params[0].data : '',
+    },
   ];
   return txDetails;
 }

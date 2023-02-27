@@ -5,13 +5,23 @@ import CallRequest from './CallRequest';
 import { useEffect, useState } from 'react';
 
 export default function WalletConnectModal() {
-  const { wcRequests } = useAppState();
+  const { wcConnector, wcRequests } = useAppState();
 
   const [open, setOpen] = useState(wcRequests.length > 0);
 
   useEffect(() => {
-    setOpen(wcRequests.length > 0);
-  }, [wcRequests]);
+    const hasRequest = wcRequests.length > 0;
+    if (!hasRequest) {
+      setOpen(false);
+      return;
+    }
+    const openSessionRequest = wcRequests[0].method === 'session_request';
+    const openCallRequest =
+      wcConnector &&
+      wcConnector.connected === true &&
+      wcRequests[0].method !== 'session_request';
+    setOpen(hasRequest && (openSessionRequest || openCallRequest));
+  }, [wcConnector, wcRequests]);
 
   return (
     <AlertDialog.Root open={open} onOpenChange={setOpen}>
