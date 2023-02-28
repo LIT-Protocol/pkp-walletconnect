@@ -14,10 +14,9 @@ import {
   getDefaultAuthNeededCallback,
   getPKPPublicKeyByWebAuthnId,
 } from '../utils/helpers';
-import { getUserPubkeyForAuthMethod } from '../utils/contracts';
 import { AuthMethodTypes } from '../utils/constants';
-import { parseAuthenticatorData } from '../utils/parseAuthenticatorData';
-import { decodeAttestationObject } from '../utils/decodeAttestationObject';
+import { parseAuthenticatorData } from '../utils/webauthn/parseAuthenticatorData';
+import { decodeAttestationObject } from '../utils/webauthn/decodeAttestationObject';
 import cbor from 'cbor';
 import Footer from './Footer';
 
@@ -44,9 +43,6 @@ export default function Login() {
   // For UI
   const [view, setView] = useState(LoginViews.SIGN_UP);
   const [errorMsg, setErrorMsg] = useState(null);
-
-  // For polling mint status
-  const [pollCount, setPollCount] = useState(0);
 
   // Current user
   const [username, setUsername] = useState('');
@@ -79,7 +75,6 @@ export default function Login() {
         `${relayServerUrl}/generate-registration-options?username=${username}`,
         {
           method: 'GET',
-          // credentials: 'include',
           headers: {
             'api-key': relayApiKey,
           },
@@ -109,7 +104,7 @@ export default function Login() {
       const attResp = await startRegistration(
         publicKeyCredentialCreationOptions
       );
-      console.log('attResp', attResp);
+      // console.log('attResp', attResp);
 
       // Send the credential to the relying party for verification
       let verificationJSON = null;
@@ -119,7 +114,6 @@ export default function Login() {
           `${relayServerUrl}/verify-registration`,
           {
             method: 'POST',
-            // credentials: 'include',
             headers: {
               'Content-Type': 'application/json',
               'api-key': relayApiKey,
@@ -137,13 +131,12 @@ export default function Login() {
 
       // If the credential was verified, continue to authentication step
       if (verificationJSON && verificationJSON.verified) {
-        await handleRegistered(attResp);
-        return;
+        return await handleRegistered(attResp);
       } else {
-        setError('Failed to register your passkey. Please try again.');
         console.error('Error during WebAuthn registration', {
           err: JSON.stringify(verificationJSON),
         });
+        setError('Failed to register your passkey. Please try again.');
         return;
       }
     } catch (error) {
@@ -189,7 +182,6 @@ export default function Login() {
         `${relayServerUrl}/generate-authentication-options`,
         {
           method: 'GET',
-          // credentials: 'include',
           headers: {
             'api-key': relayApiKey,
           },
@@ -216,8 +208,40 @@ export default function Login() {
       const asseResp = await startAuthentication(
         publicKeyCredentialRequestOptions
       );
-      console.log('asseResp', asseResp);
-      await handleAuthenticated(asseResp);
+      // console.log('asseResp', asseResp);
+
+      // Send the credential to the relying party for verification
+      let verificationJSON = null;
+
+      try {
+        const verificationResp = await fetch(
+          `${relayServerUrl}/verify-authentication`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'api-key': relayApiKey,
+            },
+            body: JSON.stringify(asseResp),
+          }
+        );
+
+        verificationJSON = await verificationResp.json();
+      } catch (e) {
+        console.error(e);
+        setError('Something went wrong with our server. Please try again.');
+        return;
+      }
+
+      if (verificationJSON && verificationJSON.verified) {
+        return await handleAuthenticated(asseResp);
+      } else {
+        console.error('Error during WebAuthn authentication', {
+          err: JSON.stringify(verificationJSON),
+        });
+        setError('Failed to authenticate your passkey. Please try again.');
+        return;
+      }
     } catch (error) {
       console.error(error);
       setError('Unable to authenticate your passkey. Please try again.');
@@ -242,39 +266,26 @@ export default function Login() {
 
     const signature = base64url.toBuffer(asseResp.response.signature);
 
-    // Send the credential to the relying party for verification
-    let verificationJSON = null;
+    let currentPKP = null;
 
     try {
-      const verificationResp = await fetch(
-        `${relayServerUrl}/verify-authentication`,
-        {
-          method: 'POST',
-          // credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'api-key': relayApiKey,
-          },
-          body: JSON.stringify({
-            signature: ethers.utils.hexlify(signature),
-            signatureBase: ethers.utils.hexlify(signatureBase),
-            credentialPublicKey: webAuthnCredentialPublicKey,
-          }),
-        }
+      currentPKP = await mintPKP(
+        ethers.utils.hexlify(signature),
+        ethers.utils.hexlify(signatureBase),
+        webAuthnCredentialPublicKey
       );
-
-      verificationJSON = await verificationResp.json();
     } catch (e) {
       console.error(e);
-      setError('Something went wrong with our server. Please try again.');
+      setError(
+        'Something went wrong with minting your wallet. Please try again.'
+      );
       return;
     }
 
-    if (verificationJSON && verificationJSON.verified) {
-      let currentPKP = null;
-
+    if (currentPKP) {
       try {
-        currentPKP = await mintPKP(
+        await createSession(
+          currentPKP,
           ethers.utils.hexlify(signature),
           ethers.utils.hexlify(signatureBase),
           webAuthnCredentialPublicKey
@@ -282,33 +293,10 @@ export default function Login() {
       } catch (e) {
         console.error(e);
         setError(
-          'Something went wrong with minting your wallet. Please try again.'
+          'Something went wrong with creating your session. Please try again.'
         );
         return;
       }
-
-      if (currentPKP) {
-        try {
-          await createSession(
-            currentPKP,
-            ethers.utils.hexlify(signature),
-            ethers.utils.hexlify(signatureBase),
-            webAuthnCredentialPublicKey
-          );
-        } catch (e) {
-          console.error(e);
-          setError(
-            'Something went wrong with creating your session. Please try again.'
-          );
-          return;
-        }
-      }
-    } else {
-      setError('Failed to authenticate your passkey. Please try again.');
-      console.error('Error during WebAuthn authentication', {
-        err: JSON.stringify(verificationJSON),
-      });
-      return;
     }
   }
 
@@ -354,8 +342,6 @@ export default function Login() {
   async function pollRequestUntilTerminalState(requestId) {
     const maxPollCount = 20;
     for (let i = 0; i < maxPollCount; i++) {
-      setPollCount(i);
-
       const response = await fetch(
         `${relayServerUrl}/auth/status/${requestId}`,
         {
@@ -445,7 +431,6 @@ export default function Login() {
       type: 'authenticated',
       isAuthenticated: true,
       currentUsername: username,
-      currentAuthMethod: authMethod,
       currentPKP: currentPKP,
       sessionSigs: sessionSigs,
       sessionExpiration: expiration,
@@ -531,7 +516,7 @@ export default function Login() {
                 />
               </div>
               <p id="username-field" className="mt-2 text-sm font-light">
-                Name your passkey to make it easier to remember.
+                Give your passkey a unique name.
               </p>
             </div>
             <button
@@ -569,7 +554,26 @@ export default function Login() {
       )}
       {view === LoginViews.AUTHENTICATE && (
         <div>
-          <h1 className="text-3xl sm:text-4xl text-base-100 font-medium mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-10 h-10 text-base-300"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z"
+            />
+          </svg>
+          <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
             Use your new passkey
           </h1>
           <p className="mb-4">

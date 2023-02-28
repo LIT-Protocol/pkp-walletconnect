@@ -96,10 +96,10 @@ export const LIT_CHAINS = [
     testNetwork: false,
   },
 ];
+
 export const INITIAL_APP_STATE = {
   isAuthenticated: false,
   currentUsername: null,
-  currentAuthMethod: {},
   currentPKP: null,
   sessionSigs: {},
   sessionExpiration: null,
@@ -108,6 +108,7 @@ export const INITIAL_APP_STATE = {
   wcConnector: null,
   wcRequests: [],
 };
+
 export const AuthMethodTypes = {
   NULLMETHOD: 0,
   ADDRESS: 1,
