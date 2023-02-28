@@ -8,7 +8,6 @@ import AddChainPrompt from './AddChainPrompt';
 import SwitchChainPrompt from './SwitchChainPrompt';
 import TransactionPrompt from './TransactionPrompt';
 import RawTransactionPrompt from './RawTransactionPrompt';
-import { ethers } from 'ethers';
 
 export default function CallRequest({ payload }) {
   const { currentPKP, sessionSigs, appChains, wcConnector } = useAppState();

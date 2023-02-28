@@ -11,7 +11,6 @@ export default function appReducer(state, action) {
         ...state,
         isAuthenticated: action.isAuthenticated,
         currentUsername: action.currentUsername,
-        currentAuthMethod: action.currentAuthMethod,
         currentPKP: action.currentPKP,
         sessionSigs: action.sessionSigs,
         sessionExpiration: action.sessionExpiration,

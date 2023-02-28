@@ -1,5 +1,6 @@
 import { useAppDispatch } from '../context/AppContext';
 import WalletConnect from '@walletconnect/client';
+import { WALLETCONNECT_KEY } from '../utils/constants';
 
 const useWalletConnect = () => {
   const dispatch = useAppDispatch();
@@ -78,12 +79,26 @@ const useWalletConnect = () => {
       }
       dispatch({
         type: 'remove_connector',
-        wcConnector: wcConnector,
       });
     });
   }
 
-  return wcConnect;
+  async function wcDisconnect(wcConnector) {
+    try {
+      await wcConnector.killSession();
+      localStorage.removeItem(WALLETCONNECT_KEY);
+      dispatch({
+        type: 'remove_connector',
+      });
+    } catch (error) {
+      console.error('Error trying to close WalletConnect session: ', error);
+      dispatch({
+        type: 'remove_connector',
+      });
+    }
+  }
+
+  return { wcConnect, wcDisconnect };
 };
 
 export default useWalletConnect;

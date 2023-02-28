@@ -1,40 +1,23 @@
 import { useState, useCallback } from 'react';
-import { useAppDispatch, useAppState } from '../context/AppContext';
+import { useAppState } from '../context/AppContext';
 import useWalletConnect from '../hooks/useWalletConnect';
 import QrHandler from './QrHandler';
 import { SessionCard } from './SessionCard';
 
 export default function ConnectDapp({ goBack }) {
   const { wcConnector } = useAppState();
-  const dispatch = useAppDispatch();
-
-  const wcConnect = useWalletConnect();
+  const { wcConnect, wcDisconnect } = useWalletConnect();
 
   const [uri, setUri] = useState('');
 
   const handleQrPaste = useCallback(
-    event => {
+    async event => {
       event.preventDefault();
-      wcConnect({ uri: uri });
+      await wcConnect({ uri: uri });
       setUri('');
     },
     [wcConnect, uri]
   );
-
-  async function wcDisconnect(wcConnector) {
-    try {
-      await wcConnector.killSession();
-      localStorage.removeItem(`walletconnect`);
-      dispatch({
-        type: 'remove_connector',
-      });
-    } catch (error) {
-      console.error('Error trying to close WalletConnect session: ', error);
-      dispatch({
-        type: 'remove_connector',
-      });
-    }
-  }
 
   return (
     <>

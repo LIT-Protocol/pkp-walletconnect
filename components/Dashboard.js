@@ -15,7 +15,6 @@ const DashboardViews = {
 export default function Dashboard() {
   const { currentUsername, currentPKP, wcConnector, appChainId, appChains } =
     useAppState();
-  const wcConnect = useWalletConnect();
 
   const [view, setView] = useState(DashboardViews.HOME);
 
@@ -24,17 +23,6 @@ export default function Dashboard() {
   function goBack() {
     setView(DashboardViews.HOME);
   }
-
-  useEffect(() => {
-    // If there's a stored WalletConnect session, try to re-connect
-    if (wcConnector && !wcConnector.connected) {
-      const storedWc = localStorage.getItem('walletconnect');
-      if (storedWc) {
-        const parsedWc = JSON.parse(storedWc);
-        wcConnect({ session: parsedWc });
-      }
-    }
-  }, [wcConnector, wcConnect]);
 
   return (
     <>

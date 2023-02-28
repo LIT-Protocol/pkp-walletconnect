@@ -1,4 +1,6 @@
 export const STATE_KEY = 'lit-demo-state';
+export const WALLETCONNECT_KEY = 'walletconnect';
+
 export const DEFAULT_CHAIN_ID = 5;
 export const LIT_CHAINS = [
   {

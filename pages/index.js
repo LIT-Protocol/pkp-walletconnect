@@ -1,13 +1,15 @@
 import Head from 'next/head';
 import Login from '../components/Login';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Dashboard from '../components/Dashboard';
 import { useAppState } from '../context/AppContext';
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
-import { useEffect } from 'react';
+import useWalletConnect from '../hooks/useWalletConnect';
+import { WALLETCONNECT_KEY } from '../utils/constants';
 
 export default function Home() {
-  const { isAuthenticated } = useAppState();
+  const { isAuthenticated, sessionExpiration, wcConnector } = useAppState();
+  const { wcConnect, wcDisconnect } = useWalletConnect();
 
   const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(true);
 
@@ -16,6 +18,49 @@ export default function Home() {
       browserSupportsWebAuthn() && !navigator.userAgent.includes('Firefox');
     setIsWebAuthnSupported(supported);
   }, []);
+
+  useEffect(() => {
+    // Check if session sigs have expired
+    async function checkSession() {
+      const sessionDate = new Date(sessionExpiration);
+      const now = new Date();
+      if (sessionDate < now) {
+        // Reset state
+        dispatch({
+          type: 'disconnect',
+        });
+
+        // Disconnect WalletConnect session
+        if (wcConnector && wcConnector.connected === true) {
+          await wcDisconnect(wcConnector);
+        }
+      }
+    }
+
+    // Check session expiration if exists
+    if (sessionExpiration) {
+      checkSession();
+    }
+  }, [sessionExpiration, wcConnector, wcDisconnect]);
+
+  useEffect(() => {
+    async function initWalletConnect() {
+      // Check for a stored WalletConnect session
+      const storedWc = localStorage.getItem(WALLETCONNECT_KEY);
+      if (storedWc) {
+        // Reconnect if not initialized or not connected
+        if (!wcConnector || (wcConnector && !wcConnector.connected)) {
+          const parsedWc = JSON.parse(storedWc);
+          await wcConnect({ session: parsedWc });
+        }
+      }
+    }
+
+    // Reconnect to WalletConnect session if authenticated
+    if (isAuthenticated) {
+      initWalletConnect();
+    }
+  }, [isAuthenticated, wcConnector, wcConnect]);
 
   if (!isWebAuthnSupported) {
     return (

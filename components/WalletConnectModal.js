@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 export default function WalletConnectModal() {
   const { wcConnector, wcRequests } = useAppState();
 
-  const [open, setOpen] = useState(wcRequests.length > 0);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const hasRequest = wcRequests.length > 0;
@@ -31,7 +31,7 @@ export default function WalletConnectModal() {
           onOpenAutoFocus={event => event.preventDefault()}
           className="dialog drop-shadow-lg"
         >
-          {wcRequests.length > 0 && (
+          {open && (
             <div className="p-6 sm:p-8">
               {wcRequests[0].method === 'session_request' ? (
                 <SessionRequest payload={wcRequests[0]} />

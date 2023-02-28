@@ -9,8 +9,8 @@ export default function QrHandler({ wcConnect }) {
   }
 
   const handleQrPaste = useCallback(
-    uri => {
-      wcConnect({ uri: uri });
+    async uri => {
+      await wcConnect({ uri: uri });
       setShow(false);
     },
     [wcConnect]

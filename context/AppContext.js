@@ -1,6 +1,10 @@
 import { createContext, useContext, useReducer, useEffect } from 'react';
 import appReducer from '../reducers/appReducer';
-import { INITIAL_APP_STATE, STATE_KEY } from '../utils/constants';
+import {
+  INITIAL_APP_STATE,
+  STATE_KEY,
+  WALLETCONNECT_KEY,
+} from '../utils/constants';
 
 export const AppContext = createContext(null);
 export const AppDispatchContext = createContext(null);
@@ -15,10 +19,19 @@ export function AppProvider({ children }) {
       // Check if we have a stored state in localStorage
       const storedState = localStorage.getItem(STATE_KEY);
       if (storedState) {
+        const parsedState = JSON.parse(storedState);
         dispatch({
           type: 'restore_state',
-          storedState: JSON.parse(storedState),
+          storedState: parsedState,
         });
+
+        if (!parsedState.isAuthenticated) {
+          // Remove WalletConnect session if not authenticated
+          localStorage.removeItem(WALLETCONNECT_KEY);
+          dispatch({
+            type: 'remove_connector',
+          });
+        }
       }
     }
   }, []);
@@ -26,17 +39,6 @@ export function AppProvider({ children }) {
   useEffect(() => {
     // Persist state in localStorage every time state changes
     localStorage.setItem(STATE_KEY, JSON.stringify(state));
-  }, [state]);
-
-  useEffect(() => {
-    // Check if session sigs have expired
-    if (state && state.sessionExpiration) {
-      const sessionExpiration = new Date(state.sessionExpiration);
-      const now = new Date();
-      if (sessionExpiration < now) {
-        console.log('SESSION SIGS HAVE EXPIRED');
-      }
-    }
   }, [state]);
 
   return (
