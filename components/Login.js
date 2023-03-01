@@ -270,15 +270,26 @@ export default function Login() {
     let currentPKP = null;
 
     try {
-      currentPKP = await mintPKP(
+      const pkps = await fetchPKPs(
         ethers.utils.hexlify(signature),
         ethers.utils.hexlify(signatureBase),
         webAuthnCredentialPublicKey
       );
+      if (pkps.length > 0) {
+        currentPKP = pkps[0];
+      } else {
+        // Mint PKP
+        const newPKP = await mintPKP(
+          ethers.utils.hexlify(signature),
+          ethers.utils.hexlify(signatureBase),
+          webAuthnCredentialPublicKey
+        );
+        currentPKP = newPKP;
+      }
     } catch (e) {
       console.error(e);
       setError(
-        'Something went wrong with minting your wallet. Please try again.'
+        'Something went wrong with getting your wallet. Please try again.'
       );
       return;
     }
@@ -337,6 +348,33 @@ export default function Login() {
       };
       return newPKP;
     }
+  }
+
+  async function fetchPKPs(signature, signatureBase, credentialPublicKey) {
+    setView(LoginViews.LOOKING_UP);
+
+    const fetchRes = await fetch(`${relayServerUrl}/auth/webauthn/userinfo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': relayApiKey,
+      },
+      body: JSON.stringify({
+        signature,
+        signatureBase,
+        credentialPublicKey,
+      }),
+    });
+
+    if (fetchRes.status < 200 || fetchRes.status >= 400) {
+      const relayErr = new Error('Failed to fetch PKPs from relay server');
+      console.error(relayErr);
+      setError(relayErr.message);
+      return;
+    }
+
+    const resBody = await fetchRes.json();
+    return resBody;
   }
 
   // Poll the relay server for status of minting request
