@@ -26,6 +26,7 @@ const relayApiKey = process.env.NEXT_PUBLIC_RELAY_API_KEY;
 
 const LoginViews = {
   SIGN_UP: 'sign_up',
+  SIGN_IN: 'sign_in',
   REGISTERING: 'registering',
   AUTHENTICATE: 'authenticate',
   AUTHENTICATING: 'authenticating',
@@ -372,7 +373,7 @@ export default function Login() {
       }
 
       // otherwise, sleep then continue polling
-      await new Promise(r => setTimeout(r, 15000));
+      await new Promise(r => setTimeout(r, 1000));
     }
 
     // At this point, polling ended and still no success, set failure status
@@ -495,7 +496,7 @@ export default function Login() {
             auth flow&mdash;passkeys. No more passwords, no more seed phrases,
             no more extensions.
           </p>
-          <form onSubmit={register} className="w-100 mb-4">
+          <form onSubmit={register} className="w-100 mb-3">
             <div className="mb-6">
               <label
                 htmlFor="username"
@@ -515,7 +516,7 @@ export default function Login() {
                   className="block w-full border border-transparent bg-base-1000 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
-              <p id="username-field" className="mt-2 text-sm font-light">
+              <p id="username-field" className="mt-2 text-sm text-base-500">
                 Give your passkey a unique name.
               </p>
             </div>
@@ -526,6 +527,15 @@ export default function Login() {
               Get started
             </button>
           </form>
+          {/* <div className="text-sm text-base-500 text-center">
+            Have a wallet?{' '}
+            <button
+              className="text-indigo-400 hover:text-indigo-500 focus:outline-none hover:underline"
+              onClick={() => setView(LoginViews.SIGN_IN)}
+            >
+              Sign in
+            </button>
+          </div> */}
         </div>
       )}
       {view === LoginViews.REGISTERING && (
@@ -707,7 +717,61 @@ export default function Login() {
           </p>
         </div>
       )}
-      <Footer showDisclaimer={view === LoginViews.SIGN_UP} />
+      {view === LoginViews.SIGN_IN && (
+        <div>
+          <h1 className="text-3xl sm:text-4xl text-base-100 font-medium mb-4">
+            Welcome back
+          </h1>
+          <p className="text-sm sm:text-base mb-6">
+            Navigate the open web with a secure, self-custody wallet that you
+            can easily tailor to your needs.
+          </p>
+          <form onSubmit={authenticate} className="w-100 mb-3">
+            <div className="mb-6">
+              <label
+                htmlFor="username"
+                className="block text-base text-base-300"
+              >
+                Your passkey name
+              </label>
+              <div className="mt-1">
+                <input
+                  name="username"
+                  type="text"
+                  autoComplete="username webauthn"
+                  aria-describedby="username-field"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  className="block w-full border border-transparent bg-base-1000 focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <p id="username-field" className="mt-2 text-sm text-base-500">
+                Use the passkey linked to your cloud wallet.
+              </p>
+            </div>
+            <button
+              type="submit"
+              className="w-full border border-indigo-500 px-6 py-3 text-base text-indigo-300 bg-indigo-600 bg-opacity-20 hover:bg-opacity-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Sign in
+            </button>
+          </form>
+          <div className="text-sm text-base-500 text-center">
+            Need a cloud wallet?{' '}
+            <button
+              onClick={() => setView(LoginViews.SIGN_UP)}
+              className="text-indigo-400 hover:text-indigo-500 focus:outline-none hover:underline"
+            >
+              Create one
+            </button>
+          </div>
+        </div>
+      )}
+      <Footer
+        showDisclaimer={
+          view === LoginViews.SIGN_UP || view === LoginViews.SIGN_IN
+        }
+      />
     </>
   );
 }

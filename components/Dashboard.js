@@ -4,6 +4,7 @@ import { truncateAddress } from '../utils/helpers';
 import ConnectDapp from './ConnectDapp';
 import CopyBtn from './CopyBtn';
 import Footer from './Footer';
+import LogoutButton from './LogoutButton';
 import NetworkMenu from './NetworkMenu';
 import WalletConnectModal from './WalletConnectModal';
 
@@ -27,6 +28,7 @@ export default function Dashboard() {
       <div className="grow">
         <div className="float-right" ref={setNetworkMenuContainer}>
           <NetworkMenu networkMenuContainer={networkMenuContainer} />
+          <LogoutButton />
         </div>
 
         {view === DashboardViews.HOME && (

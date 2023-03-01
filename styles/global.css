@@ -166,3 +166,30 @@
   margin: 0.5rem 0;
   border-top: 1px solid var(--base-200);
 }
+
+.tooltip__content {
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: var(--base-400);
+  background-color: var(--base-900);
+  user-select: none;
+  animation-duration: 400ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+.tooltip__content[data-state='delayed-open'][data-side='top'] {
+  animation-name: slideDownAndFade;
+}
+.tooltip__content[data-state='delayed-open'][data-side='right'] {
+  animation-name: slideLeftAndFade;
+}
+.tooltip__content[data-state='delayed-open'][data-side='bottom'] {
+  animation-name: slideUpAndFade;
+}
+.tooltip__content[data-state='delayed-open'][data-side='left'] {
+  animation-name: slideRightAndFade;
+}
+
+.TooltipArrow {
+  fill: var(--base-900);
+}
