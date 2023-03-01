@@ -5,6 +5,7 @@ import { getChain, truncateAddress } from '../utils/helpers';
 import ConnectDapp from './ConnectDapp';
 import CopyBtn from './CopyBtn';
 import Footer from './Footer';
+import NetworkMenu from './NetworkMenu';
 import WalletConnectModal from './WalletConnectModal';
 
 const DashboardViews = {
@@ -13,12 +14,10 @@ const DashboardViews = {
 };
 
 export default function Dashboard() {
-  const { currentUsername, currentPKP, wcConnector, appChainId, appChains } =
-    useAppState();
+  const { currentUsername, currentPKP } = useAppState();
 
   const [view, setView] = useState(DashboardViews.HOME);
-
-  const chain = getChain(appChainId, appChains);
+  const [networkMenuContainer, setNetworkMenuContainer] = useState(null);
 
   function goBack() {
     setView(DashboardViews.HOME);
@@ -27,20 +26,10 @@ export default function Dashboard() {
   return (
     <>
       <div className="grow">
-        {chain && (
-          <div className="float-right">
-            <span className="mt-1 inline-flex items-center rounded-full bg-indigo-900 bg-opacity-20 text-sm text-indigo-200 border border-indigo-500 border-opacity-40 px-2.5 py-0.5">
-              <svg
-                className="-ml-0.5 mr-1.5 h-2 w-2 text-indigo-400"
-                fill="currentColor"
-                viewBox="0 0 8 8"
-              >
-                <circle cx={4} cy={4} r={3} />
-              </svg>
-              {chain.name ? chain.name : 'Unknown network'}
-            </span>
-          </div>
-        )}
+        <div className="float-right" ref={setNetworkMenuContainer}>
+          <NetworkMenu networkMenuContainer={networkMenuContainer} />
+        </div>
+
         {view === DashboardViews.HOME && (
           <>
             <h1 className="text-3xl sm:text-4xl text-base-100 font-medium mb-8">

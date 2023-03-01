@@ -98,7 +98,27 @@ const useWalletConnect = () => {
     }
   }
 
-  return { wcConnect, wcDisconnect };
+  // Update WalletConnect session
+  function updateSession(wcConnector, pkpAddress, chainId) {
+    try {
+      wcConnector.updateSession({
+        accounts: [pkpAddress],
+        chainId: chainId,
+      });
+      dispatch({
+        type: 'update_connector',
+        wcConnector: wcConnector,
+      });
+    } catch (error) {
+      console.error('Error trying to update WalletConnect session: ', error);
+      dispatch({
+        type: 'update_connector',
+        wcConnector: wcConnector,
+      });
+    }
+  }
+
+  return { wcConnect, wcDisconnect, updateSession };
 };
 
 export default useWalletConnect;

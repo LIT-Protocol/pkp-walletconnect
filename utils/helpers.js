@@ -185,3 +185,23 @@ export async function getPKPsForAuthMethod({
     throw new Error('Unable to get PKPs for auth method');
   }
 }
+
+export function getNetworkIcon(chainId) {
+  switch (chainId) {
+    case 1:
+    case 5:
+    case 3:
+      return '/networks/ethereum.png';
+    case 137:
+    case 80001:
+      return '/networks/polygon.png';
+    case 42161:
+      return '/networks/arbitrum.png';
+    case 10:
+      return '/networks/optimism.svg';
+    case 42220:
+      return '/networks/celo.svg';
+    default:
+      return undefined;
+  }
+}

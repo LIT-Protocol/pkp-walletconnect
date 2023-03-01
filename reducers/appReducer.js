@@ -52,7 +52,6 @@ export default function appReducer(state, action) {
       return {
         ...state,
         appChainId: action.appChainId,
-        wcConnector: action.wcConnector,
       };
     }
     case 'add_chain': {

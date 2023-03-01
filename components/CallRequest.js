@@ -8,9 +8,11 @@ import AddChainPrompt from './AddChainPrompt';
 import SwitchChainPrompt from './SwitchChainPrompt';
 import TransactionPrompt from './TransactionPrompt';
 import RawTransactionPrompt from './RawTransactionPrompt';
+import useWalletConnect from '../hooks/useWalletConnect';
 
 export default function CallRequest({ payload }) {
   const { currentPKP, sessionSigs, appChains, wcConnector } = useAppState();
+  const { updateSession } = useWalletConnect();
 
   const dispatch = useAppDispatch();
 
@@ -158,36 +160,19 @@ export default function CallRequest({ payload }) {
     return null;
   }
 
-  // // Update WalletConnect session to use new chain ID
+  // Update WalletConnect session to use new chain ID
   async function switchChain(newChainId) {
     const network = getChain(newChainId, appChains);
     if (network) {
-      updateSession(wcEthAddress, newChainId);
+      updateSession(wcConnector, wcEthAddress, newChainId);
+      dispatch({
+        type: 'switch_chain',
+        appChainId: newChainId,
+      });
     } else {
       throw Error('Chain not supported');
     }
     return null;
-  }
-
-  // Update WalletConnect session
-  function updateSession(pkpAddress, chainId) {
-    try {
-      wcConnector.updateSession({
-        accounts: [pkpAddress],
-        chainId: chainId,
-      });
-      dispatch({
-        type: 'switch_chain',
-        appChainId: chainId,
-        wcConnector: wcConnector,
-      });
-    } catch (error) {
-      console.error('Error trying to update WalletConnect session: ', error);
-      dispatch({
-        type: 'update_connector',
-        wcConnector: wcConnector,
-      });
-    }
   }
 
   // Reject request via WalletConnect
