@@ -1,17 +1,122 @@
-import LitJsSdk from 'lit-js-sdk';
+export const STATE_KEY = 'lit-demo-state';
+export const WALLETCONNECT_KEY = 'walletconnect';
 
-export const ECDSA_KEY = 2;
-
-export const DEFAULT_CHAIN_ID = 80001;
-export const DEFAULT_CHAINS = [
-  LitJsSdk.LIT_CHAINS.ethereum,
-  LitJsSdk.LIT_CHAINS.goerli,
-  LitJsSdk.LIT_CHAINS.ropsten,
-  LitJsSdk.LIT_CHAINS.polygon,
-  LitJsSdk.LIT_CHAINS.mumbai,
+export const DEFAULT_CHAIN_ID = 5;
+export const LIT_CHAINS = [
+  {
+    chainId: 1,
+    name: 'Ethereum',
+    symbol: 'ETH',
+    decimals: 18,
+    type: 'ERC1155',
+    rpcUrls: [
+      'https://eth-mainnet.alchemyapi.io/v2/EuGnkVlzVoEkzdg0lpCarhm8YHOxWVxE',
+    ],
+    blockExplorerUrls: ['https://etherscan.io'],
+    vmType: 'EVM',
+    testNetwork: false,
+  },
+  {
+    chainId: 137,
+    name: 'Polygon',
+    symbol: 'MATIC',
+    decimals: 18,
+    rpcUrls: ['https://polygon-rpc.com'],
+    blockExplorerUrls: ['https://explorer.matic.network'],
+    type: 'ERC1155',
+    vmType: 'EVM',
+    testNetwork: false,
+  },
+  {
+    chainId: 42161,
+    name: 'Arbitrum',
+    symbol: 'AETH',
+    decimals: 18,
+    type: 'ERC1155',
+    rpcUrls: ['https://arb1.arbitrum.io/rpc'],
+    blockExplorerUrls: ['https://arbiscan.io/'],
+    vmType: 'EVM',
+    testNetwork: false,
+  },
+  {
+    chainId: 80001,
+    name: 'Mumbai',
+    symbol: 'MATIC',
+    decimals: 18,
+    rpcUrls: [
+      'https://rpc-mumbai.maticvigil.com/v1/96bf5fa6e03d272fbd09de48d03927b95633726c',
+    ],
+    blockExplorerUrls: ['https://mumbai.polygonscan.com'],
+    type: 'ERC1155',
+    vmType: 'EVM',
+    testNetwork: true,
+  },
+  {
+    chainId: 5,
+    name: 'Goerli',
+    symbol: 'ETH',
+    decimals: 18,
+    rpcUrls: [
+      'https://eth-goerli.g.alchemy.com/v2/KRnJnphdws3ycVi3v0t9UmGSz8AIrnFA',
+    ],
+    blockExplorerUrls: ['https://goerli.etherscan.io'],
+    type: 'ERC1155',
+    vmType: 'EVM',
+    testNetwork: true,
+  },
+  {
+    chainId: 3,
+    name: 'Ropsten',
+    symbol: 'ETH',
+    decimals: 18,
+    rpcUrls: ['https://ropsten.infura.io/v3/96dffb3d8c084dec952c61bd6230af34'],
+    blockExplorerUrls: ['https://ropsten.etherscan.io'],
+    type: 'ERC1155',
+    vmType: 'EVM',
+    testNetwork: true,
+  },
+  {
+    chainId: 10,
+    name: 'Optimism',
+    symbol: 'ETH',
+    decimals: 18,
+    rpcUrls: ['https://mainnet.optimism.io'],
+    blockExplorerUrls: ['https://optimistic.etherscan.io'],
+    type: 'ERC1155',
+    vmType: 'EVM',
+    testNetwork: false,
+  },
+  {
+    chainId: 42220,
+    name: 'Celo',
+    symbol: 'CELO',
+    decimals: 18,
+    rpcUrls: ['https://forno.celo.org'],
+    blockExplorerUrls: ['https://explorer.celo.org'],
+    type: 'ERC1155',
+    vmType: 'EVM',
+    testNetwork: false,
+  },
 ];
 
-export const CURRENT_PKP_STORAGE_KEY = 'current_pkp';
-export const PKPS_STORAGE_KEY = 'my_pkps';
-export const WC_RESULTS_STORAGE_KEY = 'pkp_wc_results';
-export const AUTH_SIG_STORAGE_KEY = 'lit-auth-signature';
+export const INITIAL_APP_STATE = {
+  isAuthenticated: false,
+  currentUsername: null,
+  currentPKP: null,
+  sessionSigs: {},
+  sessionExpiration: null,
+  appChainId: DEFAULT_CHAIN_ID,
+  appChains: LIT_CHAINS,
+  wcConnector: null,
+  wcRequests: [],
+};
+
+export const AuthMethodTypes = {
+  NULLMETHOD: 0,
+  ADDRESS: 1,
+  ACTION: 2,
+  WEBAUTHN: 3,
+  DISCORD: 4,
+  GOOGLE: 5,
+  GOOGLE_JWT: 6,
+};

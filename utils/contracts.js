@@ -1,125 +1,64 @@
 import { ethers } from 'ethers';
-import { hexToDecimal, wei2eth } from './helpers';
-import PKPNFT from './abis/PKPNFT.json';
-import PubkeyRouter from './abis/PubkeyRouter.json';
-import { ECDSA_KEY } from './constants';
+import PKPPermissions from './abis/PKPPermissions.json';
 import ContractAddresses from './abis/deployed-contracts.json';
 
-let pkpContract = null;
-let routerContract = null;
-
-// Connect to smart contract
-const getContract = (signer, contractAddress, contractABI) => {
+function getContract(contractAddress, contractABI) {
   try {
-    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+    const provider = new ethers.providers.JsonRpcProvider(
+      'https://polygon-mumbai.g.alchemy.com/v2/onvoLvV97DDoLkAmdi0Cj7sxvfglKqDh'
+    );
+    const contract = new ethers.Contract(
+      contractAddress,
+      contractABI,
+      provider
+    );
     return contract;
   } catch (error) {
     console.error('Unable to connect to contract due to: ', error);
   }
-};
+}
 
-// Connect to PKPNFT contract
-const connectPKPContract = signer => {
-  const contractAddress = ContractAddresses.pkpNftContractAddress;
-  const pkpContract = getContract(signer, contractAddress, PKPNFT.abi);
+function getPkpPermissionsContract() {
+  const contractAddress = ContractAddresses.pkpPermissionsContractAddress;
+  const pkpContract = getContract(contractAddress, PKPPermissions.abi);
   return pkpContract;
-};
+}
 
-// Connect to PubkeyRouter contract
-const connectRouterContract = signer => {
-  const contractAddress = ContractAddresses.pubkeyRouterContractAddress;
-  const routerContract = getContract(signer, contractAddress, PubkeyRouter.abi);
-  return routerContract;
-};
-
-// Check if Lit contracts are initialized
-export const litContractsConnected =
-  pkpContract !== null && routerContract !== null;
-
-// Initialize Lit contracts
-export const connectLitContracts = signer => {
-  pkpContract = connectPKPContract(signer);
-  routerContract = connectRouterContract(signer);
-};
-
-// Remove Lit contracts
-export const disconnectLitContracts = () => {
-  pkpContract = null;
-  routerContract = null;
-};
-
-// Get public key of the given PKP NFT token ID
-export const getPubkey = async tokenId => {
-  if (!routerContract) {
-    throw new Error('Unable to connect to PubkeyRouter contract');
+export async function getUserPubkeyForAuthMethod(authMethodType, id) {
+  const contract = getPkpPermissionsContract();
+  if (!contract) {
+    throw new Error('Unable to connect to contract');
   }
-  const pubkey = await routerContract.getPubkey(tokenId);
+  const userPubkey = await contract.getUserPubkeyForAuthMethod(
+    authMethodType,
+    id
+  );
+  return userPubkey;
+}
 
+export async function getTokenIdsForAuthMethod(authMethodType, id) {
+  const contract = getPkpPermissionsContract();
+  if (!contract) {
+    throw new Error('Unable to connect to contract');
+  }
+  const tokenIds = await contract.getTokenIdsForAuthMethod(authMethodType, id);
+  return tokenIds;
+}
+
+export async function getEthAddress(tokenId) {
+  const contract = getPkpPermissionsContract();
+  if (!contract) {
+    throw new Error('Unable to connect to contract');
+  }
+  const ethAddress = await contract.getEthAddress(tokenId);
+  return ethAddress;
+}
+
+export async function getPubkey(tokenId) {
+  const contract = getPkpPermissionsContract();
+  if (!contract) {
+    throw new Error('Unable to connect to contract');
+  }
+  const pubkey = await contract.getPubkey(tokenId);
   return pubkey;
-};
-
-// Get a list of all PKP NFT token IDs owned by the given address
-export const getPKPNFTTokenIdsByAddress = async address => {
-  if (!pkpContract) {
-    throw new Error('Unable to connect to PKPNFT contract');
-  }
-
-  if (!ethers.utils.isAddress(address)) {
-    throw new Error(`Given string is not a valid address "${address}"`);
-  }
-
-  let tokens = [];
-
-  for (let i = 0; ; i++) {
-    let token;
-
-    try {
-      token = await pkpContract.tokenOfOwnerByIndex(address, i);
-      token = hexToDecimal(token.toHexString());
-      tokens.push(token);
-    } catch (e) {
-      console.log(`[getPKPNFTTokenIdsByAddress] Ended search on index: ${i}`);
-      break;
-    }
-  }
-
-  return tokens;
-};
-
-export const getMintCost = async () => {
-  if (!pkpContract) {
-    throw new Error('Unable to connect to PKPNFT contract');
-  }
-  const mintCost = await pkpContract.mintCost();
-
-  return wei2eth(mintCost);
-};
-
-export const mintPKP = async () => {
-  if (!pkpContract) {
-    throw new Error('Unable to connect to PKPNFT contract');
-  }
-  // Get mint cost
-  const mintCost = await getMintCost();
-  console.log('Fetched mint cost', mintCost);
-
-  // Estimate gas
-  const gasLimit = await pkpContract.estimateGas.mintNext(ECDSA_KEY, {
-    value: mintCost.arg,
-  });
-  console.log('Estimated gas');
-
-  // Mint PKP NFT
-  const tx = await pkpContract.mintNext(ECDSA_KEY, {
-    value: mintCost.arg,
-    gasLimit: gasLimit,
-  });
-  console.log('Minting');
-  const res = await tx.wait();
-
-  // Get minted token ID, public key, and eth address
-  const tokenId = hexToDecimal(res.events[0].topics[3]);
-  console.log('Minted tokenId', tokenId);
-
-  return { tx, tokenId };
-};
+}
