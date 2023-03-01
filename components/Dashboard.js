@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAppState } from '../context/AppContext';
-import useWalletConnect from '../hooks/useWalletConnect';
-import { getChain, truncateAddress } from '../utils/helpers';
+import { truncateAddress } from '../utils/helpers';
 import ConnectDapp from './ConnectDapp';
 import CopyBtn from './CopyBtn';
 import Footer from './Footer';

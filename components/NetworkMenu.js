@@ -3,7 +3,7 @@ import { useAppDispatch, useAppState } from '../context/AppContext';
 import useWalletConnect from '../hooks/useWalletConnect';
 import { getChain, getNetworkIcon } from '../utils/helpers';
 
-export default function dropdownMenu({ dropdownMenuContainer }) {
+export default function NetworkMenu({ dropdownMenuContainer }) {
   const { appChainId, appChains, wcConnector } = useAppState();
   const dispatch = useAppDispatch();
 
