@@ -1,5 +1,5 @@
 import { useAppState, useAppDispatch } from '../context/AppContext';
-import { LitPKP } from 'lit-pkp-sdk';
+// import { LitPKP } from 'lit-pkp-sdk';
 import { getChain, getRPCUrl, truncateAddress } from '../utils/helpers';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import SignMessagePrompt from './SignMessagePrompt';
@@ -9,6 +9,7 @@ import SwitchChainPrompt from './SwitchChainPrompt';
 import TransactionPrompt from './TransactionPrompt';
 import RawTransactionPrompt from './RawTransactionPrompt';
 import useWalletConnect from '../hooks/useWalletConnect';
+import { signEthereumRequest } from '../utils/wallet';
 
 export default function CallRequest({ payload }) {
   const { currentPKP, sessionSigs, appChains, wcConnector } = useAppState();
@@ -22,38 +23,38 @@ export default function CallRequest({ payload }) {
   const network = getChain(wcChainId, appChains);
 
   // Initialize PKP Wallet from PKP SDK
-  async function loadPKPWallet(chainId) {
-    let authSig = null;
-    if (
-      Object.values(sessionSigs).length > 0 &&
-      Object.values(sessionSigs)[0]
-    ) {
-      authSig = Object.values(sessionSigs)[0];
-      // console.log('authsig', authSig);
-    }
-    if (!authSig) {
-      throw new Error('Auth signature not found');
-    }
+  // async function loadPKPWallet(chainId) {
+  //   let authSig = null;
+  //   if (
+  //     Object.values(sessionSigs).length > 0 &&
+  //     Object.values(sessionSigs)[0]
+  //   ) {
+  //     authSig = Object.values(sessionSigs)[0];
+  //     // console.log('authsig', authSig);
+  //   }
+  //   if (!authSig) {
+  //     throw new Error('Auth signature not found');
+  //   }
 
-    const rpcUrl = getRPCUrl(chainId, appChains);
-    if (!rpcUrl) {
-      throw new Error('RPC URL not found');
-    }
+  //   const rpcUrl = getRPCUrl(chainId, appChains);
+  //   if (!rpcUrl) {
+  //     throw new Error('RPC URL not found');
+  //   }
 
-    const wallet = new LitPKP({
-      pkpPubKey: currentPKP.publicKey,
-      controllerAuthSig: authSig,
-      provider: rpcUrl,
-    });
-    await wallet.init();
-    return wallet;
-  }
+  //   const wallet = new LitPKP({
+  //     pkpPubKey: currentPKP.publicKey,
+  //     controllerAuthSig: authSig,
+  //     provider: rpcUrl,
+  //   });
+  //   await wallet.init();
+  //   return wallet;
+  // }
 
   // Approve request via WalletConnect
   async function approveRequest(payload) {
     // console.log('Approve request via WalletConnect', payload);
 
-    const wallet = await loadPKPWallet(wcChainId);
+    // const wallet = await loadPKPWallet(wcChainId);
 
     let result;
 
@@ -67,25 +68,26 @@ export default function CallRequest({ payload }) {
         case 'eth_signTypedData_v4':
         case 'eth_sendRawTransaction':
           // Sign with PKP Wallet
-          result = await wallet.signEthereumRequest(payload);
+          // result = await wallet.signEthereumRequest(payload);
+          result = await signEthereumRequest(currentPKP, sessionSigs, payload);
           break;
         case 'eth_signTransaction':
         case 'eth_sendTransaction':
           try {
-            const estGas = await wallet.rpcProvider.estimateGas(
-              payload.params[0]
-            );
+            // const estGas = await wallet.rpcProvider.estimateGas(
+            //   payload.params[0]
+            // );
             // console.log('estGas', ethers.BigNumber.from(estGas).toNumber());
-
             // Set gas limit
-            if (estGas) {
-              payload.params[0].gasLimit = estGas;
-            }
+            // if (estGas) {
+            //   payload.params[0].gasLimit = estGas;
+            // }
           } catch (e) {
             console.error('Err when adding fee data to tx payload', e);
           }
 
-          result = await wallet.signEthereumRequest(payload);
+          // result = await wallet.signEthereumRequest(payload);
+          result = await signEthereumRequest(currentPKP, sessionSigs, payload);
           break;
         case 'wallet_addEthereumChain':
           // Add chain to list of supported chains

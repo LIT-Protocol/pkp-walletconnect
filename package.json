@@ -10,8 +10,8 @@
     "fetchContracts": "node ./tools/getDeployedContracts.mjs"
   },
   "dependencies": {
-    "@lit-protocol/lit-node-client": "^2.1.38",
-    "@lit-protocol/pkp-ethers.js": "^5.7.48",
+    "@lit-protocol/lit-node-client": "^2.1.123",
+    "@lit-protocol/pkp-ethers": "^2.1.123",
     "@metamask/eth-sig-util": "^5.0.0",
     "@next/font": "^13.1.6",
     "@radix-ui/react-alert-dialog": "^1.0.2",
