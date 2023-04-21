@@ -1,5 +1,4 @@
 import { useAppState, useAppDispatch } from '../context/AppContext';
-import { LitPKP } from 'lit-pkp-sdk';
 import { getChain, getRPCUrl, truncateAddress } from '../utils/helpers';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import SignMessagePrompt from './SignMessagePrompt';
@@ -9,6 +8,7 @@ import SwitchChainPrompt from './SwitchChainPrompt';
 import TransactionPrompt from './TransactionPrompt';
 import RawTransactionPrompt from './RawTransactionPrompt';
 import useWalletConnect from '../hooks/useWalletConnect';
+import LitPKP from '../utils/wallet';
 
 export default function CallRequest({ payload }) {
   const { currentPKP, sessionSigs, appChains, wcConnector } = useAppState();
@@ -21,18 +21,10 @@ export default function CallRequest({ payload }) {
   const wcEthAddress = wcConnector.accounts[0];
   const network = getChain(wcChainId, appChains);
 
-  // Initialize PKP Wallet from PKP SDK
+  // Initialize PKP Wallet
   async function loadPKPWallet(chainId) {
-    let authSig = null;
-    if (
-      Object.values(sessionSigs).length > 0 &&
-      Object.values(sessionSigs)[0]
-    ) {
-      authSig = Object.values(sessionSigs)[0];
-      // console.log('authsig', authSig);
-    }
-    if (!authSig) {
-      throw new Error('Auth signature not found');
+    if (!sessionSigs) {
+      throw new Error('Session signatures not found');
     }
 
     const rpcUrl = getRPCUrl(chainId, appChains);
@@ -41,11 +33,10 @@ export default function CallRequest({ payload }) {
     }
 
     const wallet = new LitPKP({
-      pkpPubKey: currentPKP.publicKey,
-      controllerAuthSig: authSig,
-      provider: rpcUrl,
+      pkpPublicKey: currentPKP.publicKey,
+      sessionSigs: sessionSigs,
+      rpcUrl: rpcUrl,
     });
-    await wallet.init();
     return wallet;
   }
 
@@ -72,15 +63,14 @@ export default function CallRequest({ payload }) {
         case 'eth_signTransaction':
         case 'eth_sendTransaction':
           try {
-            const estGas = await wallet.rpcProvider.estimateGas(
-              payload.params[0]
-            );
+            // const estGas = await wallet.rpcProvider.estimateGas(
+            //   payload.params[0]
+            // );
             // console.log('estGas', ethers.BigNumber.from(estGas).toNumber());
-
             // Set gas limit
-            if (estGas) {
-              payload.params[0].gasLimit = estGas;
-            }
+            // if (estGas) {
+            //   payload.params[0].gasLimit = estGas;
+            // }
           } catch (e) {
             console.error('Err when adding fee data to tx payload', e);
           }

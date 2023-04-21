@@ -2,13 +2,14 @@ import Head from 'next/head';
 import Login from '../components/Login';
 import { useState, useEffect } from 'react';
 import Dashboard from '../components/Dashboard';
-import { useAppState } from '../context/AppContext';
+import { useAppDispatch, useAppState } from '../context/AppContext';
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import useWalletConnect from '../hooks/useWalletConnect';
 import { WALLETCONNECT_KEY } from '../utils/constants';
 
 export default function Home() {
   const { isAuthenticated, sessionExpiration, wcConnector } = useAppState();
+  const dispatch = useAppDispatch();
   const { wcConnect, wcDisconnect } = useWalletConnect();
 
   const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(true);
