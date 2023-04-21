@@ -6,13 +6,20 @@ import {
 } from '@simplewebauthn/browser';
 import base64url from 'base64url';
 
+/**
+ * WebAuthn helpers
+ *
+ * TEMP: Porting things over to the TS SDK
+ */
+
 export const DEFAULT_EXP = new Date(
   Date.now() + 1000 * 60 * 60 * 24 * 7
 ).toISOString();
 
-const relayServerUrl = 'http://localhost:3001';
-// const relayServerUrl = 'https://relay-server-staging.herokuapp.com';
-const relayApiKey = '75cd2d6d-a029-45d1-a3a3-3217f6277f05';
+const relayServerUrl =
+  process.env.NEXT_PUBLIC_RELAY_API_URL ||
+  'https://relay-server-staging.herokuapp.com';
+const relayApiKey = process.env.NEXT_PUBLIC_RELAY_API_KEY || 'test';
 const rpcUrl = 'https://chain-rpc.litprotocol.com/http';
 
 // Register WebAuthn credential
@@ -124,7 +131,7 @@ export async function pollRequestUntilTerminalState(requestId) {
 }
 
 // Authenticate with WebAuthn credential and mint PKP
-async function authenticate() {
+export async function authenticate() {
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
   const block = await provider.getBlock('latest');
@@ -166,11 +173,10 @@ async function authenticate() {
   return actualAuthenticationResponse;
 }
 
-export async function getSessionSigsForWebAuthn(pkpPublicKey) {
-  const authData = await authenticate();
-
+export async function getSessionSigsForWebAuthn(pkpPublicKey, authData) {
   const litNodeClient = new LitNodeClient({
     litNetwork: 'serrano',
+    debug: false,
   });
   await litNodeClient.connect();
 

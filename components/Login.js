@@ -6,6 +6,7 @@ import {
   pollRequestUntilTerminalState,
   register,
   verifyRegistration,
+  authenticate,
   getSessionSigsForWebAuthn,
 } from '../utils/webauthn';
 
@@ -13,7 +14,6 @@ const LoginViews = {
   SIGN_UP: 'sign_up',
   SIGN_IN: 'sign_in',
   REGISTERING: 'registering',
-  AUTHENTICATE: 'authenticate',
   AUTHENTICATING: 'authenticating',
   MINTING: 'minting',
   MINTED: 'minted',
@@ -32,6 +32,7 @@ export default function Login() {
 
   // Current user
   const [username, setUsername] = useState('');
+  const [pkp, setPKP] = useState(null);
 
   // Update view if error has occured
   function onError(msg) {
@@ -49,8 +50,8 @@ export default function Login() {
       const options = await register(username);
 
       // If registration successful, PKP has been minted
-      setView(LoginViews.MINTING);
       const requestId = await verifyRegistration(options);
+      setView(LoginViews.MINTING);
 
       // Poll minting status
       const pollRes = await pollRequestUntilTerminalState(requestId);
@@ -61,9 +62,7 @@ export default function Login() {
           ethAddress: pollRes.pkpEthAddress,
         };
         setView(LoginViews.MINTED);
-
-        // Generate session sigs for new PKP
-        await getSessionSigs(newPKP);
+        setPKP(newPKP);
       } else {
         throw new Error(`Unable to poll minting status: ${pollRes}`);
       }
@@ -72,12 +71,21 @@ export default function Login() {
     }
   }
 
-  async function getSessionSigs(pkp) {
-    setView(LoginViews.CREATING_SESSION);
+  async function authThenGetSessionSigs(event) {
+    event.preventDefault();
+
+    setView(LoginViews.AUTHENTICATING);
 
     try {
+      const authData = await authenticate();
+
       // Authenticate with a WebAuthn credential and create session sigs with authentication data
-      const sessionSigs = await getSessionSigsForWebAuthn(pkp.pkpPublicKey);
+      setView(LoginViews.CREATING_SESSION);
+
+      const sessionSigs = await getSessionSigsForWebAuthn(
+        pkp.pkpPublicKey,
+        authData
+      );
 
       setView(LoginViews.SESSION_CREATED);
 
@@ -227,12 +235,12 @@ export default function Login() {
             alt="Nyan Cat loading gif"
           ></img>
 
-          <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
-            Minting wallet...
+          <h1 className="mt-6 text-2xl sm:text-3xl text-base-100 font-medium mb-4">
+            Registration successful! Minting your new wallet...
           </h1>
           <p className="text-sm sm:text-base mb-6">
             Hang tight and keep this page open as your cloud wallet is being
-            minted.
+            minted on-chain.
           </p>
         </div>
       )}
@@ -253,10 +261,43 @@ export default function Login() {
             />
           </svg>
           <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
-            Your wallet is ready!
+            You&apos;ve created a wallet!
           </h1>
           <p className="text-sm sm:text-base mb-6">
-            Follow your browser&apos;s prompts to start using your new wallet.
+            To start using your new cloud wallet, you&apos;ll need to
+            authenticate with your newly registered passkey. Continue when
+            you&apos;re ready.
+          </p>
+          <button
+            className="w-full border border-indigo-500 px-6 py-3 text-base text-indigo-300 bg-indigo-600 bg-opacity-20 hover:bg-opacity-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            onClick={authThenGetSessionSigs}
+          >
+            Continue
+          </button>
+        </div>
+      )}
+      {view === LoginViews.AUTHENTICATING && (
+        <div>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="animate-pulse w-10 h-10 text-base-300"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
+            />
+          </svg>
+          <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
+            Authenticate with your passkey
+          </h1>
+          <p className="text-sm sm:text-base mb-6">
+            Follow your browser&apos;s prompts to authenticate with your
+            passkey.
           </p>
         </div>
       )}
@@ -276,11 +317,12 @@ export default function Login() {
               d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
             />
           </svg>
-          <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
-            Securing your session
+          <h1 className="mt-6 text-2xl sm:text-3xl text-base-100 font-medium mb-4">
+            Authentication successful! Securing your session...
           </h1>
           <p className="text-sm sm:text-base mb-6">
-            Gathering your key shares so you can use your new wallet.
+            Creating a secured session so you can use your new cloud wallet
+            momentarily.
           </p>
         </div>
       )}
@@ -301,7 +343,7 @@ export default function Login() {
             />
           </svg>
           <h1 className="mt-6 text-3xl sm:text-4xl text-base-100 font-medium mb-4">
-            Success!
+            Successfully signed in with Lit
           </h1>
           <p className="text-sm sm:text-base mb-6">
             You should now be signed in. Refresh this page if you don&apos;t see
