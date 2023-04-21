@@ -38,9 +38,9 @@ export async function register(username) {
     },
   });
   if (optionsRes.status < 200 || optionsRes.status >= 400) {
-    const relayErr = new Error(
-      `Unable to register credential: ${optionsRes.error}`
-    );
+    const errorJson = await optionsRes.json();
+    const errorMsg = errorJson.error || 'Unknown error';
+    const relayErr = new Error(`Unable to register credential: ${errorMsg}`);
     throw relayErr;
   }
 
@@ -77,9 +77,9 @@ export async function verifyRegistration(options) {
     }
   );
   if (verificationResp.status < 200 || verificationResp.status >= 400) {
-    const relayErr = new Error(
-      `Unable to verify registration: ${verificationResp.error}`
-    );
+    const errorJson = await verificationResp.json();
+    const errorMsg = errorJson.error || 'Unknown error';
+    const relayErr = new Error(`Unable to verify registration: ${errorMsg}`);
     throw relayErr;
   }
 
