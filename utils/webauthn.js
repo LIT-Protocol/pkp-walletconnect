@@ -38,7 +38,9 @@ export async function register(username) {
     },
   });
   if (optionsRes.status < 200 || optionsRes.status >= 400) {
-    const relayErr = new Error(`Relay server error: ${optionsRes}`);
+    const relayErr = new Error(
+      `Unable to register credential: ${optionsRes.error}`
+    );
     throw relayErr;
   }
 
@@ -75,7 +77,9 @@ export async function verifyRegistration(options) {
     }
   );
   if (verificationResp.status < 200 || verificationResp.status >= 400) {
-    const relayErr = new Error(`Relay server error: ${verificationResp}`);
+    const relayErr = new Error(
+      `Unable to verify registration: ${verificationResp.error}`
+    );
     throw relayErr;
   }
 
