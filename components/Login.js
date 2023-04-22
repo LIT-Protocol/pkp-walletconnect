@@ -37,6 +37,10 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [pkp, setPKP] = useState(currentPKP);
 
+  // Temp
+  const [credentialRawId, setCredentialRawId] = useState(null);
+  const [credentialType, setCredentialType] = useState(null);
+
   // Update view if error has occured
   function onError(msg) {
     setErrorMsg(msg);
@@ -53,7 +57,10 @@ export default function Login() {
       const options = await register(username);
 
       // If registration successful, PKP has been minted
-      const requestId = await verifyRegistration(options);
+      const { requestId, credential } = await verifyRegistration(options);
+      console.log('credential', credential);
+      setCredentialRawId(credential.rawId);
+      setCredentialType(credential.type);
       setView(LoginViews.MINTING);
 
       // Poll minting status
@@ -80,19 +87,19 @@ export default function Login() {
     setView(LoginViews.AUTHENTICATING);
 
     try {
-      const authData = await authenticate();
+      const authData = await authenticate(credentialRawId, credentialType);
 
       let pkpToAuthWith = pkp;
-      if (!pkpToAuthWith) {
-        const pkps = await fetchPKPs(authData);
-        if (pkps.length === 0) {
-          throw new Error(
-            'No PKPs found for this passkey. Please register a new passkey to mint a new PKP.'
-          );
-        } else {
-          pkpToAuthWith = pkps[0];
-        }
-      }
+      // if (!pkpToAuthWith) {
+      //   const pkps = await fetchPKPs(authData);
+      //   if (pkps.length === 0) {
+      //     throw new Error(
+      //       'No PKPs found for this passkey. Please register a new passkey to mint a new PKP.'
+      //     );
+      //   } else {
+      //     pkpToAuthWith = pkps[0];
+      //   }
+      // }
 
       // Authenticate with a WebAuthn credential and create session sigs with authentication data
       setView(LoginViews.CREATING_SESSION);
@@ -366,7 +373,7 @@ export default function Login() {
           </p>
         </div>
       )}
-      {view === LoginViews.SIGN_IN && (
+      {/* {view === LoginViews.SIGN_IN && (
         <div>
           <h1 className="text-3xl sm:text-4xl text-base-100 font-medium mb-4">
             Welcome back
@@ -393,7 +400,7 @@ export default function Login() {
             </button>
           </div>
         </div>
-      )}
+      )} */}
       <Footer
         showDisclaimer={
           view === LoginViews.SIGN_UP || view === LoginViews.SIGN_IN

@@ -85,10 +85,11 @@ export async function verifyRegistration(options) {
   }
 
   verificationJSON = await response.json();
+  console.log('verificationJSON', verificationJSON);
 
   // If the credential was verified and registration successful, minting has kicked off
   if (verificationJSON && verificationJSON.requestId) {
-    return verificationJSON.requestId;
+    return { requestId: verificationJSON.requestId, credential: attResp };
   } else {
     const err = new Error(
       `WebAuthn registration error: ${JSON.stringify(verificationJSON)}`
@@ -136,7 +137,7 @@ export async function pollRequestUntilTerminalState(requestId) {
 }
 
 // Authenticate with WebAuthn credential and mint PKP
-export async function authenticate() {
+export async function authenticate(credentialRawId, credentialType) {
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
   const block = await provider.getBlock('latest');
@@ -159,6 +160,12 @@ export async function authenticate() {
     timeout: 60000,
     userVerification: 'preferred',
     rpId,
+    allowCredentials: [
+      {
+        id: credentialRawId,
+        type: credentialType,
+      },
+    ],
   };
 
   // Authenticate with WebAuthn.
