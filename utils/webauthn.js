@@ -31,21 +31,22 @@ export async function register(username) {
   if (username !== '') {
     url = `${url}?username=${encodeURIComponent(username)}`;
   }
-  const optionsRes = await fetch(url, {
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'api-key': relayApiKey,
     },
   });
-  if (optionsRes.status < 200 || optionsRes.status >= 400) {
-    const errorJson = await optionsRes.json();
+  if (response.status < 200 || response.status >= 400) {
+    const errorJson = await response.json();
     const errorMsg = errorJson.error || 'Unknown error';
     const relayErr = new Error(`Unable to register credential: ${errorMsg}`);
     throw relayErr;
   }
 
   // Pass the options to the authenticator and wait for a response
-  publicKeyCredentialCreationOptions = await optionsRes.json();
+  publicKeyCredentialCreationOptions = await response.json();
+  console.log(publicKeyCredentialCreationOptions);
 
   // Require a resident key for this demo
   // publicKeyCredentialCreationOptions.authenticatorSelection.residentKey =
@@ -65,7 +66,7 @@ export async function verifyRegistration(options) {
   // Send the credential to the relying party for verification
   let verificationJSON = null;
 
-  const verificationResp = await fetch(
+  const response = await fetch(
     `${relayServerUrl}/auth/webauthn/verify-registration`,
     {
       method: 'POST',
@@ -76,14 +77,14 @@ export async function verifyRegistration(options) {
       body: JSON.stringify({ credential: attResp }),
     }
   );
-  if (verificationResp.status < 200 || verificationResp.status >= 400) {
-    const errorJson = await verificationResp.json();
+  if (response.status < 200 || response.status >= 400) {
+    const errorJson = await response.json();
     const errorMsg = errorJson.error || 'Unknown error';
     const relayErr = new Error(`Unable to verify registration: ${errorMsg}`);
     throw relayErr;
   }
 
-  verificationJSON = await verificationResp.json();
+  verificationJSON = await response.json();
 
   // If the credential was verified and registration successful, minting has kicked off
   if (verificationJSON && verificationJSON.requestId) {
@@ -156,7 +157,7 @@ export async function authenticate() {
   const authenticationOptions = {
     challenge: base64url(Buffer.from(blockHashBytes)),
     timeout: 60000,
-    userVerification: 'required',
+    userVerification: 'preferred',
     rpId,
   };
 
@@ -164,17 +165,18 @@ export async function authenticate() {
   const authenticationResponse = await startAuthentication(
     authenticationOptions
   );
+  console.log('authenticationResponse', authenticationResponse);
 
   // BUG: We need to make sure userHandle is base64url encoded.
   // Deep copy the authentication response.
-  const actualAuthenticationResponse = JSON.parse(
-    JSON.stringify(authenticationResponse)
-  );
-  actualAuthenticationResponse.response.userHandle = base64url.encode(
-    authenticationResponse.response.userHandle
-  );
+  // const actualAuthenticationResponse = JSON.parse(
+  //   JSON.stringify(authenticationResponse)
+  // );
+  // actualAuthenticationResponse.response.userHandle = base64url.encode(
+  //   authenticationResponse.response.userHandle
+  // );
 
-  return actualAuthenticationResponse;
+  return authenticationResponse;
 }
 
 export async function getSessionSigsForWebAuthn(pkpPublicKey, authData) {
@@ -208,6 +210,25 @@ export async function getSessionSigsForWebAuthn(pkpPublicKey, authData) {
   });
 
   return sessionSigs;
+}
+
+export async function fetchPKPs(authData) {
+  const fetchRes = await fetch(`${relayServerUrl}/auth/webauthn/userinfo`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': relayApiKey,
+    },
+    body: JSON.stringify({ credential: authData }),
+  });
+  if (fetchRes.status < 200 || fetchRes.status >= 400) {
+    const errorJson = await fetchRes.json();
+    const errorMsg = errorJson.error || 'Unknown error';
+    const relayErr = new Error(`Unable to fetch PKPs: ${errorMsg}`);
+    throw relayErr;
+  }
+  const fetchJSON = await fetchRes.json();
+  return fetchJSON.pkps;
 }
 
 function getDomainFromOrigin(origin) {

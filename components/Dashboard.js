@@ -28,7 +28,7 @@ export default function Dashboard() {
       <div className="grow">
         <div className="float-right" ref={setNetworkMenuContainer}>
           <NetworkMenu networkMenuContainer={networkMenuContainer} />
-          {/* <LogoutButton /> */}
+          <LogoutButton />
         </div>
 
         {view === DashboardViews.HOME && (

@@ -27,7 +27,7 @@ const LogoutButton = () => {
         <Tooltip.Trigger asChild>
           <button
             onClick={async () => await logout()}
-            className="ml-1 inline-flex items-center rounded-full border border-transparent p-1.5 sm:p-2 hover:bg-base-1000 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            className="ml-2 inline-flex items-center rounded-full border border-transparent p-1.5 sm:p-2 hover:bg-base-1000 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAppDispatch } from '../context/AppContext';
+import { useAppDispatch, useAppState } from '../context/AppContext';
 import Footer from './Footer';
 import {
   DEFAULT_EXP,
@@ -8,6 +8,7 @@ import {
   verifyRegistration,
   authenticate,
   getSessionSigsForWebAuthn,
+  fetchPKPs,
 } from '../utils/webauthn';
 
 const LoginViews = {
@@ -23,6 +24,8 @@ const LoginViews = {
 };
 
 export default function Login() {
+  // App state
+  const { currentPKP } = useAppState();
   // App dispatch
   const dispatch = useAppDispatch();
 
@@ -32,7 +35,7 @@ export default function Login() {
 
   // Current user
   const [username, setUsername] = useState('');
-  const [pkp, setPKP] = useState(null);
+  const [pkp, setPKP] = useState(currentPKP);
 
   // Update view if error has occured
   function onError(msg) {
@@ -79,11 +82,23 @@ export default function Login() {
     try {
       const authData = await authenticate();
 
+      let pkpToAuthWith = pkp;
+      if (!pkpToAuthWith) {
+        const pkps = await fetchPKPs(authData);
+        if (pkps.length === 0) {
+          throw new Error(
+            'No PKPs found for this passkey. Please register a new passkey to mint a new PKP.'
+          );
+        } else {
+          pkpToAuthWith = pkps[0];
+        }
+      }
+
       // Authenticate with a WebAuthn credential and create session sigs with authentication data
       setView(LoginViews.CREATING_SESSION);
 
       const sessionSigs = await getSessionSigsForWebAuthn(
-        pkp.pkpPublicKey,
+        pkpToAuthWith.pkpPublicKey,
         authData
       );
 
@@ -93,7 +108,7 @@ export default function Login() {
         type: 'authenticated',
         isAuthenticated: true,
         currentUsername: username,
-        currentPKP: pkp,
+        currentPKP: pkpToAuthWith,
         sessionSigs: sessionSigs,
         sessionExpiration: DEFAULT_EXP,
       });
@@ -191,7 +206,7 @@ export default function Login() {
               Get started
             </button>
           </form>
-          {/* <div className="text-sm text-base-500 text-center">
+          <div className="text-sm text-base-500 text-center">
             Have a wallet?{' '}
             <button
               className="text-indigo-400 hover:text-indigo-500 focus:outline-none hover:underline"
@@ -199,7 +214,7 @@ export default function Login() {
             >
               Sign in
             </button>
-          </div> */}
+          </div>
         </div>
       )}
       {view === LoginViews.REGISTERING && (
@@ -351,45 +366,23 @@ export default function Login() {
           </p>
         </div>
       )}
-      {/* {view === LoginViews.SIGN_IN && (
+      {view === LoginViews.SIGN_IN && (
         <div>
           <h1 className="text-3xl sm:text-4xl text-base-100 font-medium mb-4">
             Welcome back
           </h1>
-          <p className="text-sm sm:text-base mb-6">
+          <p className="text-sm sm:text-base mb-8">
             Navigate the open web with a secure, self-custody wallet that you
             can easily tailor to your needs.
           </p>
-          <form onSubmit={authenticate} className="w-100 mb-3">
-            <div className="mb-6">
-              <label
-                htmlFor="username"
-                className="block text-base text-base-300"
-              >
-                Your passkey name
-              </label>
-              <div className="mt-1">
-                <input
-                  name="username"
-                  type="text"
-                  autoComplete="username webauthn"
-                  aria-describedby="username-field"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  className="block w-full border border-transparent bg-base-1000 focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-              <p id="username-field" className="mt-2 text-sm text-base-500">
-                Use the passkey linked to your cloud wallet.
-              </p>
-            </div>
+          <div className="w-100 mb-3">
             <button
-              type="submit"
+              onClick={authThenGetSessionSigs}
               className="w-full border border-indigo-500 px-6 py-3 text-base text-indigo-300 bg-indigo-600 bg-opacity-20 hover:bg-opacity-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
               Sign in
             </button>
-          </form>
+          </div>
           <div className="text-sm text-base-500 text-center">
             Need a cloud wallet?{' '}
             <button
@@ -400,7 +393,7 @@ export default function Login() {
             </button>
           </div>
         </div>
-      )} */}
+      )}
       <Footer
         showDisclaimer={
           view === LoginViews.SIGN_UP || view === LoginViews.SIGN_IN
