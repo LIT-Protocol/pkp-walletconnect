@@ -137,7 +137,7 @@ export async function pollRequestUntilTerminalState(requestId) {
 }
 
 // Authenticate with WebAuthn credential and mint PKP
-export async function authenticate(credentialRawId, credentialType) {
+export async function authenticate(credential) {
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
   const block = await provider.getBlock('latest');
@@ -160,12 +160,7 @@ export async function authenticate(credentialRawId, credentialType) {
     timeout: 60000,
     userVerification: 'preferred',
     rpId,
-    allowCredentials: [
-      {
-        id: credentialRawId,
-        type: credentialType,
-      },
-    ],
+    allowCredentials: [credential],
   };
 
   // Authenticate with WebAuthn.

@@ -36,10 +36,7 @@ export default function Login() {
   // Current user
   const [username, setUsername] = useState('');
   const [pkp, setPKP] = useState(currentPKP);
-
-  // Temp
-  const [credentialRawId, setCredentialRawId] = useState(null);
-  const [credentialType, setCredentialType] = useState(null);
+  const [credential, setCredential] = useState(null);
 
   // Update view if error has occured
   function onError(msg) {
@@ -59,8 +56,7 @@ export default function Login() {
       // If registration successful, PKP has been minted
       const { requestId, credential } = await verifyRegistration(options);
       console.log('credential', credential);
-      setCredentialRawId(credential.rawId);
-      setCredentialType(credential.type);
+      setCredential(credential);
       setView(LoginViews.MINTING);
 
       // Poll minting status
@@ -87,7 +83,7 @@ export default function Login() {
     setView(LoginViews.AUTHENTICATING);
 
     try {
-      const authData = await authenticate(credentialRawId, credentialType);
+      const authData = await authenticate(credential);
 
       let pkpToAuthWith = pkp;
       // if (!pkpToAuthWith) {
