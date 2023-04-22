@@ -48,12 +48,12 @@ export async function register(username) {
   publicKeyCredentialCreationOptions = await optionsRes.json();
 
   // Require a resident key for this demo
-  publicKeyCredentialCreationOptions.authenticatorSelection.residentKey =
-    'required';
-  publicKeyCredentialCreationOptions.authenticatorSelection.requireResidentKey = true;
-  publicKeyCredentialCreationOptions.extensions = {
-    credProps: true,
-  };
+  // publicKeyCredentialCreationOptions.authenticatorSelection.residentKey =
+  //   'required';
+  // publicKeyCredentialCreationOptions.authenticatorSelection.requireResidentKey = true;
+  // publicKeyCredentialCreationOptions.extensions = {
+  //   credProps: true,
+  // };
 
   return publicKeyCredentialCreationOptions;
 }
