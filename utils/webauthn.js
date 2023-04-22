@@ -46,15 +46,15 @@ export async function register(username) {
 
   // Pass the options to the authenticator and wait for a response
   publicKeyCredentialCreationOptions = await response.json();
-  console.log(publicKeyCredentialCreationOptions);
+  // console.log(publicKeyCredentialCreationOptions);
 
   // Require a resident key for this demo
-  // publicKeyCredentialCreationOptions.authenticatorSelection.residentKey =
-  //   'required';
-  // publicKeyCredentialCreationOptions.authenticatorSelection.requireResidentKey = true;
-  // publicKeyCredentialCreationOptions.extensions = {
-  //   credProps: true,
-  // };
+  publicKeyCredentialCreationOptions.authenticatorSelection.residentKey =
+    'required';
+  publicKeyCredentialCreationOptions.authenticatorSelection.requireResidentKey = true;
+  publicKeyCredentialCreationOptions.extensions = {
+    credProps: true,
+  };
 
   return publicKeyCredentialCreationOptions;
 }
@@ -85,11 +85,11 @@ export async function verifyRegistration(options) {
   }
 
   verificationJSON = await response.json();
-  console.log('verificationJSON', verificationJSON);
+  // console.log('verificationJSON', verificationJSON);
 
   // If the credential was verified and registration successful, minting has kicked off
   if (verificationJSON && verificationJSON.requestId) {
-    return { requestId: verificationJSON.requestId, credential: attResp };
+    return verificationJSON.requestId;
   } else {
     const err = new Error(
       `WebAuthn registration error: ${JSON.stringify(verificationJSON)}`
@@ -137,7 +137,7 @@ export async function pollRequestUntilTerminalState(requestId) {
 }
 
 // Authenticate with WebAuthn credential and mint PKP
-export async function authenticate(credential) {
+export async function authenticate() {
   const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
 
   const block = await provider.getBlock('latest');
@@ -160,23 +160,22 @@ export async function authenticate(credential) {
     timeout: 60000,
     userVerification: 'preferred',
     rpId,
-    allowCredentials: [credential],
   };
 
   // Authenticate with WebAuthn.
   const authenticationResponse = await startAuthentication(
     authenticationOptions
   );
-  console.log('authenticationResponse', authenticationResponse);
+  // console.log('authenticationResponse', authenticationResponse);
 
   // BUG: We need to make sure userHandle is base64url encoded.
   // Deep copy the authentication response.
-  // const actualAuthenticationResponse = JSON.parse(
-  //   JSON.stringify(authenticationResponse)
-  // );
-  // actualAuthenticationResponse.response.userHandle = base64url.encode(
-  //   authenticationResponse.response.userHandle
-  // );
+  const actualAuthenticationResponse = JSON.parse(
+    JSON.stringify(authenticationResponse)
+  );
+  actualAuthenticationResponse.response.userHandle = base64url.encode(
+    authenticationResponse.response.userHandle
+  );
 
   return authenticationResponse;
 }
