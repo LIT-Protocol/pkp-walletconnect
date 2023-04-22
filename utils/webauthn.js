@@ -143,16 +143,16 @@ export async function authenticate() {
 
   // Turn into byte array.
   const blockHashBytes = ethers.utils.arrayify(blockHash);
-  console.log(
-    'blockHash',
-    blockHash,
-    blockHashBytes,
-    base64url(Buffer.from(blockHashBytes))
-  );
+  // console.log(
+  //   'blockHash',
+  //   blockHash,
+  //   blockHashBytes,
+  //   base64url(Buffer.from(blockHashBytes))
+  // );
 
   // Construct authentication options.
   const rpId = getDomainFromOrigin(window.location.origin);
-  console.log('Using rpId: ', { rpId });
+  // console.log('Using rpId: ', { rpId });
   const authenticationOptions = {
     challenge: base64url(Buffer.from(blockHashBytes)),
     timeout: 60000,

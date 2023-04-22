@@ -133,10 +133,10 @@ export default function Login() {
           ) : (
             <p className="mb-8">Something went wrong.</p>
           )}
-          {/* {webAuthnCredentialPublicKey ? (
+          {pkp ? (
             <button
               className="w-full border border-base-500 px-6 py-3 text-base text-base-300 hover:bg-base-1000 focus:outline-none focus:ring-2 focus:ring-base-500 focus:ring-offset-2"
-              onClick={() => setView(LoginViews.AUTHENTICATE)}
+              onClick={() => setView(LoginViews.MINTED)}
             >
               Try again
             </button>
@@ -147,7 +147,7 @@ export default function Login() {
             >
               Go back
             </button>
-          )} */}
+          )}
         </div>
       )}
       {view === LoginViews.SIGN_UP && (
