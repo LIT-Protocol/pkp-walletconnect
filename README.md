@@ -1,4 +1,6 @@
-# Lit PKP x WalletConnect
+# Lit PKP x WalletConnect V1
+
+**🚨 This repo is being updated to upgrade the packages and move to the `cayenne` network.**
 
 Connect your Lit PKP to dApps via WalletConnect! Check out the [live demo](https://pkp-walletconnect.vercel.app/).
 
